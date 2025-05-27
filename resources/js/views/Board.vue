@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen" style="background-color: rgb(245, 245, 245)">
+    <div class="w-full app-max-width mx-auto px-20 pb-4">
+      <nav class="bg-white px-6 rounded-lg">
         <div class="flex justify-between h-16">
           <div class="flex items-center space-x-4">
             <button
               @click="goBack"
-              class="text-gray-600 hover:text-gray-900"
+              class="text-gray-600 hover:text-gray-900 font-bold px-4 py-2"
             >
               ← Назад
             </button>
@@ -15,30 +15,57 @@
           <div class="flex items-center space-x-4">
             <button
               @click="openCustomFieldModal()"
-              class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-bold"
             >
               Поля
             </button>
             <button
-              @click="currentView = currentView === 'kanban' ? 'table' : 'kanban'"
-              class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              {{ currentView === 'kanban' ? 'Таблица' : 'Канбан' }}
-            </button>
-            <button
               @click="showCreateModal = true"
-              class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-bold flex items-center space-x-2"
             >
-              Создать задачу
+              <span>Создать задачу</span>
+              <img src="https://app.dev.pto-app.ru/assets/plus.2d709d99.svg" alt="+" class="w-6 h-6" />
             </button>
           </div>
         </div>
+      </nav>
+    </div>
+
+    <!-- Табы для переключения вида -->
+    <div class="w-full app-max-width mx-auto px-20 pb-4">
+      <div class="border-b border-gray-200">
+        <nav class="-mb-px flex">
+          <button
+            @click="currentView = 'kanban'"
+            :class="[
+              'w-1/2 py-2 px-1 border-b-2 font-bold text-sm text-center',
+              currentView === 'kanban'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            ]"
+            style="font-size: 14px;"
+          >
+            Канбан
+          </button>
+          <button
+            @click="currentView = 'table'"
+            :class="[
+              'w-1/2 py-2 px-1 border-b-2 font-bold text-sm text-center',
+              currentView === 'table'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            ]"
+            style="font-size: 14px;"
+          >
+            Таблица
+          </button>
+        </nav>
       </div>
-    </nav>
+    </div>
 
     <!-- Поиск и фильтры -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div class="bg-white rounded-lg shadow p-4">
+    <div class="w-full app-max-width mx-auto px-20 pb-4">
+      <div class="bg-white rounded-lg p-4">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <!-- Поиск -->
           <div>
@@ -83,7 +110,7 @@
           <div class="flex items-end">
             <button
               @click="clearFilters"
-              class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              class="w-full px-4 py-2 text-sm font-bold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
             >
               Сбросить фильтры
             </button>
@@ -92,7 +119,7 @@
       </div>
     </div>
 
-    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="w-full app-max-width mx-auto px-20 pb-4">
       <div v-if="loading" class="text-center">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         <p class="mt-2 text-gray-600">Загрузка доски...</p>
@@ -103,7 +130,7 @@
         <div
           v-for="(column, status) in columns"
           :key="status"
-          class="bg-white rounded-lg shadow p-4"
+          class="bg-gray-100 rounded-lg p-4 border border-gray-200"
         >
           <h3 class="font-semibold text-gray-900 mb-4">
             {{ column.title }}
@@ -119,7 +146,7 @@
               v-for="task in filteredTasks[status]"
               :key="task.id"
               :data-task-id="task.id"
-              class="bg-gray-50 p-3 rounded-md border cursor-move hover:shadow-md transition-shadow"
+              class="bg-white p-3 rounded-md cursor-move"
             >
               <div class="flex justify-between items-start mb-2">
                 <h4 class="font-medium text-gray-900">{{ task.title }}</h4>
@@ -195,13 +222,13 @@
               <div class="flex justify-end space-x-2 mt-2">
                 <button
                   @click="viewTask(task)"
-                  class="text-green-600 hover:text-green-800 text-xs"
+                  class="text-green-600 hover:text-green-800 text-xs font-bold"
                 >
                   Подробнее
                 </button>
                 <button
                   @click="deleteTask(task.id)"
-                  class="text-red-600 hover:text-red-800 text-xs"
+                  class="text-red-600 hover:text-red-800 text-xs font-bold"
                 >
                   Удалить
                 </button>
@@ -212,7 +239,7 @@
       </div>
 
       <!-- Табличный вид -->
-      <div v-else-if="currentView === 'table'" class="bg-white shadow rounded-lg overflow-hidden">
+      <div v-else-if="currentView === 'table'" class="bg-white rounded-lg overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-200">
           <div class="flex justify-between items-center">
             <h3 class="text-lg font-medium text-gray-900">
@@ -225,7 +252,7 @@
               <button
                 v-if="selectedTasks.length > 0"
                 @click="deleteSelectedTasks"
-                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-bold"
               >
                 Удалить выбранные ({{ selectedTasks.length }})
               </button>
@@ -237,7 +264,7 @@
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   <input
                     type="checkbox"
                     @change="toggleSelectAll"
@@ -245,47 +272,47 @@
                     class="rounded"
                   />
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   ID
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
+                  Действия
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   Название
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   Описание
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   Статус
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   Приоритет
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   Создатель
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   Выдал
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   Ответственный
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   Дедлайн
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   Файлы
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   Комментарии
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   Создано
                 </th>
-                <th v-for="field in customFields" :key="field.id" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th v-for="field in activeCustomFields" :key="field.id" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
                   {{ field.label }}
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Действия
                 </th>
               </tr>
             </thead>
@@ -307,10 +334,42 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {{ task.id }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-900 max-w-xs">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium relative">
+                  <div class="relative">
+                    <button
+                      @click="toggleTaskMenu(task.id)"
+                      class="p-2 hover:bg-gray-100 rounded-md"
+                    >
+                      <svg class="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
+                      </svg>
+                    </button>
+                    <div
+                      v-if="openTaskMenuId === task.id"
+                      class="absolute right-0 w-32 bg-white rounded-md shadow-lg border border-gray-200 z-10"
+                      :class="shouldShowMenuAbove(task.id) ? 'bottom-full mb-2' : 'top-full mt-2'"
+                    >
+                      <div class="py-1">
+                        <button
+                          @click="viewTask(task); closeTaskMenu()"
+                          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Открыть
+                        </button>
+                        <button
+                          @click="deleteTask(task.id); closeTaskMenu()"
+                          class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-sm text-black max-w-xs">
                   <div class="truncate" :title="task.title">{{ task.title }}</div>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                <td class="px-6 py-4 text-sm text-black max-w-xs">
                   <div class="truncate" :title="task.description || 'Нет описания'">
                     {{ task.description || 'Нет описания' }}
                   </div>
@@ -340,51 +399,35 @@
                     {{ getPriorityText(task.priority) }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                <td class="px-6 py-4 text-sm text-black max-w-xs">
                   <div class="truncate">{{ getCreatorName(task.created_by_user_id) }}</div>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                <td class="px-6 py-4 text-sm text-black max-w-xs">
                   <div class="truncate">{{ getUserName(task.assigned_by_user_id) }}</div>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                <td class="px-6 py-4 text-sm text-black max-w-xs">
                   <div class="truncate">{{ getUserName(task.responsible_user_id) }}</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                   {{ task.deadline ? formatDate(task.deadline) : '-' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                   <div class="flex items-center space-x-1">
                     <span>📎</span>
                     <span>{{ task.attachments?.length || 0 }}</span>
                   </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                   <div class="flex items-center space-x-1">
                     <span>💬</span>
                     <span>{{ task.comments?.length || 0 }}</span>
                   </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                   {{ formatDate(task.created_at) }}
                 </td>
-                <td v-for="field in customFields" :key="field.id" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td v-for="field in activeCustomFields" :key="field.id" class="px-6 py-4 whitespace-nowrap text-sm text-black">
                   {{ task.custom_fields?.[field.id] || 'Не заполнено' }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div class="flex space-x-2">
-                    <button
-                      @click="viewTask(task)"
-                      class="text-indigo-600 hover:text-indigo-900"
-                    >
-                      Открыть
-                    </button>
-                    <button
-                      @click="deleteTask(task.id)"
-                      class="text-red-600 hover:text-red-900"
-                    >
-                      Удалить
-                    </button>
-                  </div>
                 </td>
               </tr>
             </tbody>
@@ -400,112 +443,126 @@
 
       <!-- Create Task Modal -->
       <div v-if="showCreateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-          <h3 class="text-lg font-bold text-gray-900 mb-4">Создать задачу</h3>
+        <div class="relative top-10 mx-auto p-6 border w-4/5 max-w-4xl rounded-md bg-white">
+          <h3 class="text-lg font-bold text-gray-900 mb-6">Создать задачу</h3>
           <form @submit.prevent="createTask">
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Название</label>
-              <input
-                v-model="newTask.title"
-                type="text"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Описание</label>
-              <textarea
-                v-model="newTask.description"
-                rows="3"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              ></textarea>
-            </div>
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Статус</label>
-              <select
-                v-model="newTask.status"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="waiting">Ожидают</option>
-                <option value="in_progress">В работе</option>
-                <option value="completed">Выполнены</option>
-                <option value="blocked">Заблокированы</option>
-              </select>
-            </div>
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Приоритет</label>
-              <select
-                v-model="newTask.priority"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="low">Низкий</option>
-                <option value="medium">Средний</option>
-                <option value="high">Высокий</option>
-              </select>
-            </div>
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Выдал</label>
-              <select
-                v-model="newTask.assigned_by_user_id"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="">Не выбрано</option>
-                <option v-for="user in users" :key="user.id" :value="user.id">
-                  {{ user.name }} {{ user.family_name || user.surname || '' }}
-                </option>
-              </select>
-            </div>
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Ответственный</label>
-              <select
-                v-model="newTask.responsible_user_id"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="">Не выбрано</option>
-                <option v-for="user in users" :key="user.id" :value="user.id">
-                  {{ user.name }} {{ user.family_name || user.surname || '' }}
-                </option>
-              </select>
-            </div>
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Дедлайн</label>
-              <input
-                v-model="newTask.deadline"
-                type="date"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-            
-            <!-- Дополнительные поля -->
-            <div v-if="customFields.length > 0" class="mb-4">
-              <h4 class="text-sm font-medium text-gray-700 mb-3">Дополнительные поля</h4>
-              <div v-for="field in customFields" :key="field.id" class="mb-3">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  {{ field.label }}
-                  <span v-if="field.is_required" class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="newTask.custom_fields[field.id]"
-                  type="text"
-                  :required="field.is_required"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                />
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Левая колонка: Название, Описание, Статус, Приоритет -->
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Название</label>
+                  <input
+                    v-model="newTask.title"
+                    type="text"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Описание</label>
+                  <textarea
+                    v-model="newTask.description"
+                    rows="4"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  ></textarea>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Статус</label>
+                  <select
+                    v-model="newTask.status"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="waiting">Ожидают</option>
+                    <option value="in_progress">В работе</option>
+                    <option value="completed">Выполнены</option>
+                    <option value="blocked">Заблокированы</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Приоритет</label>
+                  <select
+                    v-model="newTask.priority"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="low">Низкий</option>
+                    <option value="medium">Средний</option>
+                    <option value="high">Высокий</option>
+                  </select>
+                </div>
+              </div>
+              
+              <!-- Правая колонка: Выдал, Ответственный, Дедлайн, Дополнительные поля -->
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Выдал</label>
+                  <select
+                    v-model="newTask.assigned_by_user_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">Не выбрано</option>
+                    <option v-for="user in users" :key="user.id" :value="user.id">
+                      {{ user.name }} {{ user.family_name || user.surname || '' }}
+                    </option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Ответственный</label>
+                  <select
+                    v-model="newTask.responsible_user_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">Не выбрано</option>
+                    <option v-for="user in users" :key="user.id" :value="user.id">
+                      {{ user.name }} {{ user.family_name || user.surname || '' }}
+                    </option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Дедлайн</label>
+                  <input
+                    v-model="newTask.deadline"
+                    type="date"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                
+                <!-- Дополнительные поля -->
+                <div v-if="activeCustomFields.length > 0">
+                  <h4 class="text-base font-bold text-gray-700 mb-3">Дополнительные поля</h4>
+                  <div v-for="field in activeCustomFields" :key="field.id" class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">
+                      {{ field.label }}
+                      <span v-if="field.is_required" class="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      v-model="newTask.custom_fields[field.id]"
+                      type="text"
+                      :required="field.is_required"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             
-            <div class="flex justify-end space-x-3">
+            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
               <button
                 type="button"
                 @click="showCreateModal = false"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                class="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
               >
                 Отмена
               </button>
               <button
                 type="submit"
-                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
               >
                 Создать
               </button>
@@ -516,8 +573,8 @@
 
       <!-- Unified Task Modal (View/Edit) -->
       <div v-if="showTaskModal && viewingTask" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-2/3 max-w-4xl shadow-lg rounded-md bg-white">
-          <div class="flex justify-between items-start mb-4">
+        <div class="relative top-10 mx-auto p-6 border w-4/5 max-w-6xl rounded-md bg-white">
+          <div class="flex justify-between items-start mb-6">
             <h3 class="text-lg font-bold text-gray-900">
               {{ isEditMode ? 'Редактировать задачу' : 'Просмотр задачи' }}
             </h3>
@@ -525,32 +582,32 @@
               <button
                 v-if="!isEditMode"
                 @click="enableEditMode"
-                class="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                class="px-4 py-2 text-sm font-bold bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Редактировать
               </button>
               <button
                 v-if="isEditMode"
                 @click="cancelEdit"
-                class="px-3 py-1 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                class="px-4 py-2 text-sm font-bold bg-gray-600 text-white rounded-md hover:bg-gray-700"
               >
                 Отмена
               </button>
               <button
                 @click="closeTaskModal"
-                class="text-gray-400 hover:text-gray-600"
+                class="text-gray-400 hover:text-gray-600 font-bold"
               >
                 ✕
               </button>
             </div>
           </div>
           
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Task Details -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Левая колонка: Основная информация -->
             <div>
-              <form v-if="isEditMode" @submit.prevent="updateTask">
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Название</label>
+              <form v-if="isEditMode" @submit.prevent="updateTask" class="space-y-4">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Название</label>
                   <input
                     v-model="editingTask.title"
                     type="text"
@@ -559,17 +616,17 @@
                   />
                 </div>
                 
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Описание</label>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Описание</label>
                   <textarea
                     v-model="editingTask.description"
-                    rows="3"
+                    rows="4"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   ></textarea>
                 </div>
                 
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Приоритет</label>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Приоритет</label>
                   <select
                     v-model="editingTask.priority"
                     required
@@ -581,8 +638,8 @@
                   </select>
                 </div>
 
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Выдал</label>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Выдал</label>
                   <select
                     v-model="editingTask.assigned_by_user_id"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -594,8 +651,8 @@
                   </select>
                 </div>
 
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Ответственный</label>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Ответственный</label>
                   <select
                     v-model="editingTask.responsible_user_id"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -607,8 +664,8 @@
                   </select>
                 </div>
                 
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Дедлайн</label>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Дедлайн</label>
                   <input
                     v-model="editingTask.deadline"
                     type="date"
@@ -617,12 +674,12 @@
                 </div>
                 
                 <!-- Дополнительные поля -->
-                <div v-if="customFields.length > 0" class="mb-4">
-                  <h4 class="text-sm font-medium text-gray-700 mb-3">Дополнительные поля</h4>
-                  <div v-for="field in customFields" :key="field.id" class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                <div v-if="activeCustomFields.length > 0">
+                  <h4 class="text-base font-bold text-gray-700 mb-3">Дополнительные поля</h4>
+                  <div v-for="field in activeCustomFields" :key="field.id" class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">
                       {{ field.label }}
-                      <span v-if="field.is_required" class="text-red-500">*</span>
+                      <span v-if="field.is_required" class="text-red-500 ml-1">*</span>
                     </label>
                     <input
                       v-model="editingTask.custom_fields[field.id]"
@@ -633,29 +690,29 @@
                   </div>
                 </div>
                 
-                <div class="flex justify-start space-x-3">
+                <div class="flex justify-start space-x-3 pt-4 border-t">
                   <button
                     type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                    class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
                   >
                     Сохранить
                   </button>
                 </div>
               </form>
               
-              <div v-else>
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Название</label>
+              <div v-else class="space-y-4">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Название</label>
                   <p class="text-lg font-medium text-gray-900">{{ viewingTask?.title }}</p>
                 </div>
                 
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Описание</label>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Описание</label>
                   <p class="text-sm text-gray-600">{{ viewingTask?.description || 'Нет описания' }}</p>
                 </div>
                 
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Статус</label>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Статус</label>
                   <span 
                     :class="{
                       'bg-blue-100 text-blue-800': viewingTask?.status === 'waiting',
@@ -669,8 +726,8 @@
                   </span>
                 </div>
                 
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Приоритет</label>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Приоритет</label>
                   <span 
                     :class="{
                       'bg-red-100 text-red-800': viewingTask?.priority === 'high',
@@ -683,90 +740,92 @@
                   </span>
                 </div>
 
-                <div class="mb-4" v-if="viewingTask?.assigned_by_user_id">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Выдал</label>
+                <div v-if="viewingTask?.assigned_by_user_id">
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Выдал</label>
                   <p class="text-sm text-gray-600">{{ getUserName(viewingTask.assigned_by_user_id) }}</p>
                 </div>
 
-                <div class="mb-4" v-if="viewingTask?.responsible_user_id">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Ответственный</label>
+                <div v-if="viewingTask?.responsible_user_id">
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Ответственный</label>
                   <p class="text-sm text-gray-600">{{ getUserName(viewingTask.responsible_user_id) }}</p>
                 </div>
                 
-                <div class="mb-4" v-if="viewingTask?.deadline">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Дедлайн</label>
+                <div v-if="viewingTask?.deadline">
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Дедлайн</label>
                   <p class="text-sm text-gray-600">{{ formatDate(viewingTask.deadline) }}</p>
                 </div>
                 
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Создатель</label>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Создатель</label>
                   <p class="text-sm text-gray-600">{{ getCreatorName(viewingTask?.created_by_user_id) }}</p>
                 </div>
                 
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Создано</label>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Создано</label>
                   <p class="text-sm text-gray-600">{{ formatDate(viewingTask?.created_at) }}</p>
                 </div>
                 
                 <!-- Дополнительные поля -->
-                <div v-if="customFields.length > 0" class="mb-4">
-                  <h4 class="text-sm font-medium text-gray-700 mb-3">Дополнительные поля</h4>
-                  <div v-for="field in customFields" :key="field.id" class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ field.label }}</label>
+                <div v-if="activeCustomFields.length > 0">
+                  <h4 class="text-base font-bold text-gray-700 mb-3">Дополнительные поля</h4>
+                  <div v-for="field in activeCustomFields" :key="field.id" class="mb-3">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">{{ field.label }}</label>
                     <p class="text-sm text-gray-600">
                       {{ viewingTask?.custom_fields?.[field.id] || 'Не заполнено' }}
                     </p>
                   </div>
                 </div>
               </div>
-
-              <!-- Files Section -->
-              <div class="mt-6">
-                <h4 class="text-md font-semibold text-gray-900 mb-3">Файлы</h4>
+            </div>
+            
+            <!-- Правая колонка: Файлы и Комментарии -->
+            <div>
+              <!-- Файлы -->
+              <div class="mb-6">
+                <h4 class="text-base font-bold text-gray-700 mb-3">Файлы</h4>
                 
                 <!-- Upload File Form -->
                 <form @submit.prevent="uploadFile" class="mb-4">
-                  <div class="flex items-end space-x-2">
-                    <div class="flex-1">
-                      <input
-                        ref="fileInput"
-                        type="file"
-                        @change="handleFileSelect"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                      />
-                    </div>
+                  <div class="border-2 border-dashed border-indigo-300 rounded-lg p-4 bg-indigo-50">
+                    <input
+                      ref="fileInput"
+                      type="file"
+                      @change="handleFileSelect"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 mb-3"
+                    />
                     <button
                       type="submit"
                       :disabled="!selectedFile || uploading"
-                      class="px-3 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                      class="w-full px-3 py-2 text-sm font-bold bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
                     >
-                      {{ uploading ? 'Загрузка...' : 'Загрузить' }}
+                      {{ uploading ? 'Загрузка...' : 'Загрузить файл' }}
                     </button>
                   </div>
                 </form>
                 
                 <!-- Files List -->
-                <div class="space-y-2">
-                  <div v-if="!taskAttachments || taskAttachments.length === 0" class="text-gray-500 text-sm">
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                  <div v-if="!taskAttachments || taskAttachments.length === 0" class="text-gray-500 text-sm text-center py-4">
                     Файлов пока нет
                   </div>
-                  <div v-for="attachment in taskAttachments" :key="attachment.id" class="bg-gray-50 rounded p-3 flex justify-between items-center">
-                    <div>
-                      <span class="font-medium text-sm">{{ attachment.file_name }}</span>
+                  <div v-for="attachment in taskAttachments" :key="attachment.id" class="bg-gray-50 rounded-lg p-3">
+                    <div class="mb-2">
+                      <span class="font-medium text-sm block">{{ attachment.file_name }}</span>
                       <div class="text-xs text-gray-500">
-                        {{ formatFileSize(attachment.file_size) }} • {{ getUserName(attachment.uploaded_by_user_id) }} • {{ formatDate(attachment.created_at) }}
+                        {{ formatFileSize(attachment.file_size) }} • {{ getUserName(attachment.uploaded_by_user_id) }}
                       </div>
+                      <div class="text-xs text-gray-400">{{ formatDate(attachment.created_at) }}</div>
                     </div>
                     <div class="flex space-x-2">
                       <button 
                         @click="downloadFile(attachment)" 
-                        class="text-blue-600 hover:text-blue-800 text-sm"
+                        class="text-blue-600 hover:text-blue-800 text-sm font-bold"
                       >
                         Скачать
                       </button>
                       <button 
                         @click="deleteAttachment(attachment)" 
-                        class="text-red-600 hover:text-red-800 text-sm"
+                        class="text-red-600 hover:text-red-800 text-sm font-bold"
                       >
                         Удалить
                       </button>
@@ -774,40 +833,40 @@
                   </div>
                 </div>
               </div>
-            </div>
-            
-            <!-- Comments Section -->
-            <div>
-              <h4 class="text-md font-semibold text-gray-900 mb-3">Комментарии</h4>
-              
-              <!-- Add Comment Form -->
-              <form @submit.prevent="addComment" class="mb-4">
-                <textarea
-                  v-model="newComment"
-                  placeholder="Добавить комментарий..."
-                  rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 mb-2"
-                ></textarea>
-                <button
+
+              <!-- Комментарии -->
+              <div>
+                <h4 class="text-base font-bold text-gray-700 mb-3">Комментарии</h4>
+                
+                <!-- Add Comment Form -->
+                <form @submit.prevent="addComment" class="mb-4">
+                  <textarea
+                    v-model="newComment"
+                    placeholder="Добавить комментарий..."
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 mb-2"
+                  ></textarea>
+                                  <button
                   type="submit"
                   :disabled="!newComment.trim()"
-                  class="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                  class="w-full px-4 py-2 text-sm font-bold bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  Добавить
-                </button>
-              </form>
-              
-              <!-- Comments List -->
-              <div class="max-h-64 overflow-y-auto space-y-3">
-                <div v-if="!taskComments || taskComments.length === 0" class="text-gray-500 text-sm">
-                  Комментариев пока нет
-                </div>
-                <div v-for="comment in taskComments" :key="comment.id" class="bg-gray-50 rounded p-3">
-                  <div class="flex justify-between items-start mb-1">
-                    <span class="font-medium text-sm">{{ comment.user_name }} {{ comment.user_surname }}</span>
-                    <span class="text-xs text-gray-500">{{ formatDate(comment.created_at) }}</span>
+                    Добавить комментарий
+                  </button>
+                </form>
+                
+                <!-- Comments List -->
+                <div class="max-h-64 overflow-y-auto space-y-3">
+                  <div v-if="!taskComments || taskComments.length === 0" class="text-gray-500 text-sm text-center py-4">
+                    Комментариев пока нет
                   </div>
-                  <p class="text-sm text-gray-700">{{ comment.content }}</p>
+                  <div v-for="comment in taskComments" :key="comment.id" class="bg-gray-50 rounded-lg p-3">
+                    <div class="flex justify-between items-start mb-1">
+                      <span class="font-medium text-sm">{{ comment.user_name }} {{ comment.user_surname }}</span>
+                      <span class="text-xs text-gray-500">{{ formatDate(comment.created_at) }}</span>
+                    </div>
+                    <p class="text-sm text-gray-700">{{ comment.content }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -818,7 +877,7 @@
 
     <!-- Custom Fields Management Modal -->
     <div v-if="showCustomFieldModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-2/3 max-w-2xl shadow-lg rounded-md bg-white">
+      <div class="relative top-20 mx-auto p-5 border w-2/3 max-w-2xl rounded-md bg-white">
         <div class="flex justify-between items-start mb-4">
           <h3 class="text-lg font-bold text-gray-900">
             {{ editingCustomField && editingCustomField.id ? 'Редактировать поле' : 'Управление дополнительными полями' }}
@@ -838,7 +897,7 @@
               <button
                 @click="toggleShowInactive"
                 :class="[
-                  'px-3 py-1 rounded text-sm font-medium',
+                  'px-4 py-2 rounded text-sm font-bold',
                   showInactiveFields 
                     ? 'bg-gray-600 text-white hover:bg-gray-700' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -848,7 +907,7 @@
               </button>
               <button
                 @click="startCreatingField()"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-bold"
               >
                 Добавить поле
               </button>
@@ -877,21 +936,21 @@
                 <button 
                   v-if="field.is_active"
                   @click="openCustomFieldModal(field)" 
-                  class="text-blue-600 hover:text-blue-800 text-sm"
+                  class="text-blue-600 hover:text-blue-800 text-sm font-bold"
                 >
                   Редактировать
                 </button>
                 <button 
                   v-if="field.is_active"
                   @click="deleteCustomField(field)" 
-                  class="text-red-600 hover:text-red-800 text-sm"
+                  class="text-red-600 hover:text-red-800 text-sm font-bold"
                 >
                   Удалить
                 </button>
                 <button 
                   v-if="!field.is_active"
                   @click="reactivateCustomField(field)" 
-                  class="text-green-600 hover:text-green-800 text-sm"
+                  class="text-green-600 hover:text-green-800 text-sm font-bold"
                 >
                   Активировать
                 </button>
@@ -950,13 +1009,13 @@
               <button
                 type="button"
                 @click="closeCustomFieldModal"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                class="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
               >
                 Отмена
               </button>
               <button
                 type="submit"
-                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
               >
                 {{ editingCustomField && editingCustomField.id ? 'Сохранить' : 'Создать' }}
               </button>
@@ -1039,6 +1098,9 @@ export default {
     });
     const editingCustomField = ref(null);
     const showInactiveFields = ref(false);
+    
+    // Task menu state
+    const openTaskMenuId = ref(null);
 
     const taskComments = computed(() => {
       return viewingTask.value?.comments || [];
@@ -1050,6 +1112,10 @@ export default {
 
     const users = computed(() => {
       return authStore.users || [];
+    });
+
+    const activeCustomFields = computed(() => {
+      return customFields.value.filter(field => field.is_active);
     });
 
     const allTasks = computed(() => {
@@ -1682,9 +1748,34 @@ export default {
       return customFields.value.filter(field => showInactiveFields.value || field.is_active);
     });
 
+    // Task menu methods
+    const toggleTaskMenu = (taskId) => {
+      openTaskMenuId.value = openTaskMenuId.value === taskId ? null : taskId;
+    };
+
+    const closeTaskMenu = () => {
+      openTaskMenuId.value = null;
+    };
+
+    const shouldShowMenuAbove = (taskId) => {
+      // Находим индекс задачи в отфильтрованном списке
+      const taskIndex = filteredAllTasks.value.findIndex(task => task.id === taskId);
+      const totalTasks = filteredAllTasks.value.length;
+      
+      // Если задача в последних 3 строках, показываем меню сверху
+      return taskIndex >= totalTasks - 3;
+    };
+
     onMounted(() => {
       fetchBoard();
       fetchCustomFields();
+      
+      // Close task menu when clicking outside
+      document.addEventListener('click', (event) => {
+        if (!event.target.closest('.relative')) {
+          closeTaskMenu();
+        }
+      });
     });
 
     return {
@@ -1737,6 +1828,7 @@ export default {
       filteredTasks,
       clearFilters,
       customFields,
+      activeCustomFields,
       showCustomFieldModal,
       customFieldForm,
       editingCustomField,
@@ -1750,6 +1842,10 @@ export default {
       displayedFields,
       showInactiveFields,
       startCreatingField,
+      openTaskMenuId,
+      toggleTaskMenu,
+      closeTaskMenu,
+      shouldShowMenuAbove,
     };
   },
 };
