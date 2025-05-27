@@ -1,129 +1,178 @@
 <template>
-  <div class="min-h-screen" style="background-color: rgb(245, 245, 245)">
-    <div class="w-full app-max-width mx-auto px-20 pb-4">
-      <nav class="bg-white px-6 rounded-lg">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center space-x-4">
-            <button
-              @click="goBack"
-              class="text-gray-600 hover:text-gray-900 font-bold px-4 py-2"
-            >
-              ← Назад
-            </button>
-            <h1 class="text-xl font-semibold">{{ currentObjectName || 'Загрузка...' }}</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <button
-              @click="openCustomFieldModal()"
-              class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-bold"
-            >
-              Поля
-            </button>
-            <button
-              @click="showCreateModal = true"
-              class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-bold flex items-center space-x-2"
-            >
-              <span>Создать задачу</span>
-              <img src="https://app.dev.pto-app.ru/assets/plus.2d709d99.svg" alt="+" class="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-      </nav>
-    </div>
-
-    <!-- Табы для переключения вида -->
-    <div class="w-full app-max-width mx-auto px-20 pb-4">
-      <div class="border-b border-gray-200">
-        <nav class="-mb-px flex">
-          <button
-            @click="currentView = 'kanban'"
-            :class="[
-              'w-1/2 py-2 px-1 border-b-2 font-bold text-sm text-center',
-              currentView === 'kanban'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            ]"
-            style="font-size: 14px;"
+    <div class="min-h-screen flex" style="background-color: rgb(245, 245, 245)">
+    <!-- Боковое меню -->
+    <div class="w-64 bg-white border-r border-gray-200 flex-shrink-0">
+      <div class="p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-6">{{ currentObjectName || 'Загрузка...' }}</h2>
+        <nav class="space-y-2">
+          <router-link
+            :to="`/board/${route.params.objectId}`"
+            class="flex items-center px-4 py-2 text-sm font-medium rounded-md text-indigo-600 bg-indigo-50"
           >
-            Канбан
-          </button>
+            <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            Задачи
+          </router-link>
+          
           <button
-            @click="currentView = 'table'"
-            :class="[
-              'w-1/2 py-2 px-1 border-b-2 font-bold text-sm text-center',
-              currentView === 'table'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            ]"
-            style="font-size: 14px;"
+            disabled
+            class="flex items-center w-full px-4 py-2 text-sm font-medium rounded-md text-gray-400 cursor-not-allowed"
           >
-            Таблица
+            <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Ежедневный отчет
           </button>
+          
+          <button
+            disabled
+            class="flex items-center w-full px-4 py-2 text-sm font-medium rounded-md text-gray-400 cursor-not-allowed"
+          >
+            <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Табель
+          </button>
+          
+          <router-link
+            :to="`/analytics/${route.params.objectId}`"
+            class="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+          >
+            <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+            Аналитика
+          </router-link>
         </nav>
       </div>
     </div>
 
-    <!-- Поиск и фильтры -->
-    <div class="w-full app-max-width mx-auto px-20 pb-4">
-      <div class="bg-white rounded-lg p-4">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- Поиск -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Поиск</label>
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Поиск по названию или описанию..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
+    <!-- Основной контент -->
+    <div class="flex-1 min-w-0">
+      <div class="w-full max-w-screen-2xl mx-auto px-20 pb-4">
+        <nav class="bg-white px-6 rounded-lg">
+          <div class="flex justify-between h-16">
+            <div class="flex items-center space-x-4">
+              <button
+                @click="goBack"
+                class="text-gray-600 hover:text-gray-900 font-bold px-4 py-2"
+              >
+                ← Назад
+              </button>
+            </div>
+            <div class="flex items-center space-x-4">
+              <button
+                @click="openCustomFieldModal()"
+                class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-bold"
+              >
+                Поля
+              </button>
+              <button
+                @click="showCreateModal = true"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-bold flex items-center space-x-2"
+              >
+                <span>Создать задачу</span>
+                <img src="https://app.dev.pto-app.ru/assets/plus.2d709d99.svg" alt="+" class="w-6 h-6" />
+              </button>
+            </div>
           </div>
-          
-          <!-- Фильтр по приоритету -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Приоритет</label>
-            <select
-              v-model="priorityFilter"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Все приоритеты</option>
-              <option value="low">Низкий</option>
-              <option value="medium">Средний</option>
-              <option value="high">Высокий</option>
-            </select>
-          </div>
-          
-          <!-- Фильтр по ответственному -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Ответственный</label>
-            <select
-              v-model="responsibleFilter"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Все пользователи</option>
-              <option v-for="user in users" :key="user.id" :value="user.id">
-                {{ user.name }} {{ user.family_name || user.surname || '' }}
-              </option>
-            </select>
-          </div>
-          
-          <!-- Кнопка сброса фильтров -->
-          <div class="flex items-end">
+        </nav>
+      </div>
+
+          <!-- Табы для переключения вида -->
+      <div class="w-full max-w-screen-2xl mx-auto px-20 pb-4">
+        <div class="border-b border-gray-200">
+          <nav class="-mb-px flex">
             <button
-              @click="clearFilters"
-              class="w-full px-4 py-2 text-sm font-bold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              @click="currentView = 'kanban'"
+              :class="[
+                'w-1/2 py-2 px-1 border-b-2 font-bold text-sm text-center',
+                currentView === 'kanban'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ]"
+              style="font-size: 14px;"
             >
-              Сбросить фильтры
+              Канбан
             </button>
+            <button
+              @click="currentView = 'table'"
+              :class="[
+                'w-1/2 py-2 px-1 border-b-2 font-bold text-sm text-center',
+                currentView === 'table'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ]"
+              style="font-size: 14px;"
+            >
+              Таблица
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Поиск и фильтры -->
+      <div class="w-full max-w-screen-2xl mx-auto px-20 pb-4">
+        <div class="bg-white rounded-lg p-4">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Поиск -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Поиск</label>
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Поиск по названию или описанию..."
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            
+            <!-- Фильтр по приоритету -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Приоритет</label>
+              <select
+                v-model="priorityFilter"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">Все приоритеты</option>
+                <option value="low">Низкий</option>
+                <option value="medium">Средний</option>
+                <option value="high">Высокий</option>
+              </select>
+            </div>
+            
+            <!-- Фильтр по ответственному -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Ответственный</label>
+              <select
+                v-model="responsibleFilter"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">Все пользователи</option>
+                <option v-for="user in users" :key="user.id" :value="user.id">
+                  {{ user.name }} {{ user.family_name || user.surname || '' }}
+                </option>
+              </select>
+            </div>
+            
+            <!-- Кнопка сброса фильтров -->
+            <div class="flex items-end">
+              <button
+                @click="clearFilters"
+                class="w-full px-4 py-2 text-sm font-bold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              >
+                Сбросить фильтры
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="w-full app-max-width mx-auto px-20 pb-4">
-      <div v-if="loading" class="text-center">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        <p class="mt-2 text-gray-600">Загрузка доски...</p>
-      </div>
+      <div class="w-full max-w-screen-2xl mx-auto px-20 pb-4">
+        <div v-if="loading" class="text-center">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <p class="mt-2 text-gray-600">Загрузка доски...</p>
+        </div>
 
       <!-- Канбан вид -->
       <div v-else-if="currentView === 'kanban'" class="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -180,12 +229,27 @@
               </p>
               
               <div v-if="task.assigned_by_user_id || task.responsible_user_id" class="mb-2 text-xs text-gray-600">
-                <div v-if="task.assigned_by_user_id">👋 Выдал: {{ getUserName(task.assigned_by_user_id) }}</div>
-                <div v-if="task.responsible_user_id">👤 Ответственный: {{ getUserName(task.responsible_user_id) }}</div>
+                <div v-if="task.assigned_by_user_id" class="flex items-center">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"></path>
+                  </svg>
+                  Выдал: {{ getUserName(task.assigned_by_user_id) }}
+                </div>
+                <div v-if="task.responsible_user_id" class="flex items-center">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                  </svg>
+                  Ответственный: {{ getUserName(task.responsible_user_id) }}
+                </div>
               </div>
 
               <div v-if="task.attachments && task.attachments.length > 0" class="mb-2">
-                <div class="text-xs text-gray-500 mb-1">📎 Файлы ({{ task.attachments.length }}):</div>
+                <div class="text-xs text-gray-500 mb-1 flex items-center">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                  </svg>
+                  Файлы ({{ task.attachments.length }}):
+                </div>
                 <div class="space-y-1">
                   <div v-for="attachment in task.attachments" :key="attachment.id" class="text-xs bg-gray-100 rounded p-1 flex justify-between items-center">
                     <span>{{ attachment.file_name }}</span>
@@ -193,14 +257,21 @@
                       @click="downloadFile(attachment)" 
                       class="text-blue-600 hover:text-blue-800"
                     >
-                      ⬇️
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
                     </button>
                   </div>
                 </div>
               </div>
               
               <div v-if="task.comments && task.comments.length > 0" class="mb-2">
-                <div class="text-xs text-gray-500 mb-1">💬 Комментарии ({{ task.comments.length }}):</div>
+                <div class="text-xs text-gray-500 mb-1 flex items-center">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                  </svg>
+                  Комментарии ({{ task.comments.length }}):
+                </div>
                 <div class="max-h-20 overflow-y-auto space-y-1">
                   <div v-for="comment in task.comments" :key="comment.id" class="text-xs bg-gray-100 rounded p-1">
                     <div class="font-medium">{{ comment.user_name }} {{ comment.user_surname }}</div>
@@ -210,12 +281,21 @@
                 </div>
               </div>
               
-              <div v-if="task.deadline" class="text-xs text-gray-500 mb-2">
-                📅 Дедлайн: {{ formatDate(task.deadline) }}
+              <div v-if="task.deadline" class="text-xs text-gray-500 mb-2 flex items-center">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Дедлайн: {{ formatDate(task.deadline) }}
               </div>
               
               <div class="flex justify-between items-center text-xs text-gray-500">
-                <span>🔧 {{ getCreatorName(task.created_by_user_id) }}</span>
+                <span class="flex items-center">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                  {{ getCreatorName(task.created_by_user_id) }}
+                </span>
                 <span>{{ formatDate(task.created_at) }}</span>
               </div>
               
@@ -413,13 +493,17 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                   <div class="flex items-center space-x-1">
-                    <span>📎</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                    </svg>
                     <span>{{ task.attachments?.length || 0 }}</span>
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                   <div class="flex items-center space-x-1">
-                    <span>💬</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
                     <span>{{ task.comments?.length || 0 }}</span>
                   </div>
                 </td>
@@ -1023,6 +1107,7 @@
           </form>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -1629,7 +1714,7 @@ export default {
       }
     };
 
-    const openCustomFieldModal = (field = null) => {
+    const openCustomFieldModal = async (field = null) => {
       console.log('openCustomFieldModal called with:', field);
       
       if (field) {
@@ -1651,10 +1736,8 @@ export default {
       }
       showCustomFieldModal.value = true;
       
-      // Загружаем поля при открытии модального окна если их еще нет
-      if (customFields.value.length === 0) {
-        fetchCustomFields(showInactiveFields.value);
-      }
+      // Загружаем все поля при открытии модального окна
+      await fetchCustomFields(true);
     };
 
     const saveCustomField = async () => {
@@ -1712,7 +1795,8 @@ export default {
 
     const toggleShowInactive = async () => {
       showInactiveFields.value = !showInactiveFields.value;
-      await fetchCustomFields(showInactiveFields.value);
+      // Всегда загружаем все поля (включая неактивные) для корректного отображения
+      await fetchCustomFields(true);
     };
 
     const reactivateCustomField = async (field) => {
@@ -1768,7 +1852,7 @@ export default {
 
     onMounted(() => {
       fetchBoard();
-      fetchCustomFields();
+      fetchCustomFields(true); // Загружаем все поля включая неактивные
       
       // Close task menu when clicking outside
       document.addEventListener('click', (event) => {
@@ -1779,6 +1863,7 @@ export default {
     });
 
     return {
+      route,
       loading,
       board,
       currentObjectName,
