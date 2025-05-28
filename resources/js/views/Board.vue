@@ -1,8 +1,8 @@
 <template>
     <div class="min-h-screen flex" style="background-color: rgb(245, 245, 245)">
     <!-- Боковое меню -->
-    <div class="w-64 bg-white border-r border-gray-200 flex-shrink-0">
-      <div class="p-6">
+    <div class="flex-shrink-0" style="width: 280px;">
+      <div class="bg-white border border-gray-200 rounded-lg p-6 mt-4">
         <h2 class="text-lg font-semibold text-gray-900 mb-6">{{ currentObjectName || 'Загрузка...' }}</h2>
         <nav class="space-y-2">
           <router-link
@@ -35,22 +35,24 @@
             Табель
           </button>
           
-          <router-link
-            :to="`/analytics/${route.params.objectId}`"
+          <a
+            href="https://app.staging.pto-app.ru/analytics"
+            target="_parent"
+            rel="noopener noreferrer"
             class="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50"
           >
             <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
             </svg>
             Аналитика
-          </router-link>
+          </a>
         </nav>
       </div>
     </div>
 
     <!-- Основной контент -->
     <div class="flex-1 min-w-0">
-      <div class="w-full max-w-screen-2xl mx-auto px-20 pb-4">
+      <div class="w-full max-w-screen-2xl mx-auto px-20 pt-4">
         <nav class="bg-white px-6 rounded-lg">
           <div class="flex justify-between h-16">
             <div class="flex items-center space-x-4">
@@ -207,7 +209,7 @@
                       'bg-green-100 text-green-800': task.status === 'completed',
                       'bg-red-100 text-red-800': task.status === 'blocked'
                     }"
-                    class="px-2 py-1 text-xs font-medium rounded-full"
+                    class="px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap"
                   >
                     {{ getStatusText(task.status) }}
                   </span>
@@ -274,9 +276,21 @@
                 </div>
                 <div class="max-h-20 overflow-y-auto space-y-1">
                   <div v-for="comment in task.comments" :key="comment.id" class="text-xs bg-gray-100 rounded p-1">
-                    <div class="font-medium">{{ comment.user_name }} {{ comment.user_surname }}</div>
-                    <div class="text-gray-600">{{ comment.content }}</div>
-                    <div class="text-gray-400 text-xs">{{ formatDate(comment.created_at) }}</div>
+                    <div class="flex justify-between items-start">
+                      <div class="flex-1">
+                        <div class="font-medium">{{ comment.user_name }} {{ comment.user_surname }}</div>
+                        <div class="text-gray-600">{{ comment.content }}</div>
+                        <div class="text-gray-400 text-xs">{{ formatDate(comment.created_at) }}</div>
+                      </div>
+                      <button
+                        v-if="canDeleteComment(comment)"
+                        @click.stop="deleteComment(comment)"
+                        class="text-red-600 hover:text-red-800 text-xs ml-1 flex-shrink-0"
+                        title="Удалить комментарий"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -340,7 +354,7 @@
           </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto overflow-y-visible">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
@@ -400,6 +414,7 @@
               <tr
                 v-for="task in filteredAllTasks"
                 :key="task.id"
+                :data-task-id="task.id"
                 :class="{ 'bg-blue-50': selectedTasks.includes(task.id) }"
                 class="hover:bg-gray-50"
               >
@@ -426,8 +441,9 @@
                     </button>
                     <div
                       v-if="openTaskMenuId === task.id"
-                      class="absolute right-0 w-32 bg-white rounded-md shadow-lg border border-gray-200 z-10"
+                      class="absolute right-0 w-32 bg-white rounded-md shadow-lg border border-gray-200 z-50"
                       :class="shouldShowMenuAbove(task.id) ? 'bottom-full mb-2' : 'top-full mt-2'"
+                      style="min-width: 128px;"
                     >
                       <div class="py-1">
                         <button
@@ -462,7 +478,7 @@
                       'bg-green-100 text-green-800': task.status === 'completed',
                       'bg-red-100 text-red-800': task.status === 'blocked'
                     }"
-                    class="px-2 py-1 text-xs font-medium rounded-full"
+                    class="px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap"
                   >
                     {{ getStatusText(task.status) }}
                   </span>
@@ -806,7 +822,7 @@
                       'bg-green-100 text-green-800': viewingTask?.status === 'completed',
                       'bg-red-100 text-red-800': viewingTask?.status === 'blocked'
                     }"
-                    class="px-2 py-1 text-xs font-medium rounded-full"
+                    class="px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap"
                   >
                     {{ getStatusText(viewingTask?.status) }}
                   </span>
@@ -951,7 +967,17 @@
                   <div v-for="comment in taskComments" :key="comment.id" class="bg-gray-50 rounded-lg p-3">
                     <div class="flex justify-between items-start mb-1">
                       <span class="font-medium text-sm">{{ comment.user_name }} {{ comment.user_surname }}</span>
-                      <span class="text-xs text-gray-500">{{ formatDate(comment.created_at) }}</span>
+                      <div class="flex items-center space-x-2">
+                        <span class="text-xs text-gray-500">{{ formatDate(comment.created_at) }}</span>
+                        <button
+                          v-if="canDeleteComment(comment)"
+                          @click="deleteComment(comment)"
+                          class="text-red-600 hover:text-red-800 text-xs font-bold ml-2"
+                          title="Удалить комментарий"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                     <p class="text-sm text-gray-700">{{ comment.content }}</p>
                   </div>
@@ -1851,8 +1877,52 @@ export default {
       const taskIndex = filteredAllTasks.value.findIndex(task => task.id === taskId);
       const totalTasks = filteredAllTasks.value.length;
       
+      // Если всего задач меньше 4, проверяем позицию относительно viewport
+      if (totalTasks <= 3) {
+        // Находим элемент строки таблицы
+        const taskRow = document.querySelector(`tr[data-task-id="${taskId}"]`);
+        if (taskRow) {
+          const rect = taskRow.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          // Если расстояние от нижней части строки до низа экрана меньше 150px, показываем меню сверху
+          return (viewportHeight - rect.bottom) < 150;
+        }
+        // Fallback: если элемент не найден и это единственная задача, показываем меню снизу
+        return false;
+      }
+      
       // Если задача в последних 3 строках, показываем меню сверху
       return taskIndex >= totalTasks - 3;
+    };
+
+    const canDeleteComment = (comment) => {
+      // Пользователь может удалить только свои комментарии
+      return authStore.user && authStore.user.id === comment.user_id;
+    };
+
+    const deleteComment = async (comment) => {
+      if (confirm('Вы уверены, что хотите удалить этот комментарий?')) {
+        try {
+          await axios.delete(`/api/comments/${comment.id}`, {
+            data: {
+              user_id: authStore.user.id
+            }
+          });
+          
+          // Обновляем данные доски
+          await fetchBoard();
+          
+          // Обновляем просматриваемую задачу
+          updateViewingTask();
+        } catch (error) {
+          console.error('Error deleting comment:', error);
+          if (error.response && error.response.status === 403) {
+            alert('Вы можете удалять только свои комментарии');
+          } else {
+            alert('Ошибка удаления комментария');
+          }
+        }
+      }
     };
 
     onMounted(() => {
@@ -1936,6 +2006,8 @@ export default {
       toggleTaskMenu,
       closeTaskMenu,
       shouldShowMenuAbove,
+      canDeleteComment,
+      deleteComment,
     };
   },
 };

@@ -34,8 +34,16 @@ class CommentController extends Controller
         return response()->json($comment, 201);
     }
 
-    public function destroy(Comment $comment): JsonResponse
+    public function destroy(Request $request, Comment $comment): JsonResponse
     {
+        // Get the current user ID from the request
+        $currentUserId = $request->header('X-User-Id') ?: $request->input('user_id');
+        
+        // Check if the current user is the author of the comment
+        if ($comment->user_id !== $currentUserId) {
+            return response()->json(['message' => 'Вы можете удалять только свои комментарии'], 403);
+        }
+        
         $comment->delete();
         return response()->json(['message' => 'Комментарий удален']);
     }
