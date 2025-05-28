@@ -511,7 +511,9 @@
                   {{ formatDate(task.created_at) }}
                 </td>
                 <td v-for="field in activeCustomFields" :key="field.id" class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                  {{ task.custom_fields?.[field.id] || 'Не заполнено' }}
+                  {{ field.type === 'date' && task.custom_fields?.[field.id] 
+                      ? formatDate(task.custom_fields[field.id]) 
+                      : (task.custom_fields?.[field.id] || 'Не заполнено') }}
                 </td>
               </tr>
             </tbody>
@@ -627,7 +629,7 @@
                     </label>
                     <input
                       v-model="newTask.custom_fields[field.id]"
-                      type="text"
+                      :type="field.type === 'date' ? 'date' : 'text'"
                       :required="field.is_required"
                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     />
@@ -767,7 +769,7 @@
                     </label>
                     <input
                       v-model="editingTask.custom_fields[field.id]"
-                      type="text"
+                      :type="field.type === 'date' ? 'date' : 'text'"
                       :required="field.is_required"
                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     />
@@ -855,7 +857,9 @@
                   <div v-for="field in activeCustomFields" :key="field.id" class="mb-3">
                     <label class="block text-sm font-bold text-gray-700 mb-2">{{ field.label }}</label>
                     <p class="text-sm text-gray-600">
-                      {{ viewingTask?.custom_fields?.[field.id] || 'Не заполнено' }}
+                      {{ field.type === 'date' && viewingTask?.custom_fields?.[field.id] 
+                          ? formatDate(viewingTask.custom_fields[field.id]) 
+                          : (viewingTask?.custom_fields?.[field.id] || 'Не заполнено') }}
                     </p>
                   </div>
                 </div>
@@ -1075,6 +1079,7 @@
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="text">Текст</option>
+                <option value="date">Дата</option>
               </select>
             </div>
             

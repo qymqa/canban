@@ -25,7 +25,7 @@ class CustomFieldController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:custom_fields,name',
             'label' => 'required|string|max:255',
-            'type' => 'required|in:text',
+            'type' => 'required|in:text,date',
             'is_required' => 'boolean',
             'sort_order' => 'integer|min:0',
         ]);
@@ -52,7 +52,7 @@ class CustomFieldController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:custom_fields,name,' . $customField->id,
             'label' => 'required|string|max:255',
-            'type' => 'required|in:text',
+            'type' => 'required|in:text,date',
             'is_required' => 'boolean',
             'sort_order' => 'integer|min:0',
             'is_active' => 'boolean',

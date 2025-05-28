@@ -110,10 +110,23 @@ class TaskController extends Controller
                 continue; // Пропускаем неактивные поля
             }
             
+            // Проверяем обязательность поля
             if ($field->is_required && (is_null($value) || trim($value) === '')) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     "custom_fields.{$fieldId}" => "Поле '{$field->label}' обязательно для заполнения"
                 ]);
+            }
+            
+            // Валидируем тип поля
+            if (!is_null($value) && trim($value) !== '') {
+                if ($field->type === 'date') {
+                    // Проверяем формат даты
+                    if (!$this->isValidDate($value)) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            "custom_fields.{$fieldId}" => "Поле '{$field->label}' должно содержать корректную дату"
+                        ]);
+                    }
+                }
             }
         }
         
@@ -126,6 +139,12 @@ class TaskController extends Controller
                 ]);
             }
         }
+    }
+
+    private function isValidDate(string $date): bool
+    {
+        $d = \DateTime::createFromFormat('Y-m-d', $date);
+        return $d && $d->format('Y-m-d') === $date;
     }
 
     private function saveCustomFieldValues(Task $task, array $customFields): void
