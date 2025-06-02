@@ -20,6 +20,7 @@ Route::get('/auth/users', [AuthController::class, 'getUsers']);
 
 Route::post('/boards/task-counts', [BoardController::class, 'getTaskCounts']);
 Route::get('/boards/{objectId}', [BoardController::class, 'show']);
+Route::get('/boards', [BoardController::class, 'showAll']);
 
 Route::post('/tasks', [TaskController::class, 'store']);
 Route::put('/tasks/{task}/status', [TaskController::class, 'updateStatus']);

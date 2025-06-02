@@ -52,16 +52,25 @@
 
     <!-- Основной контент -->
     <div class="flex-1 min-w-0">
-      <div class="w-full max-w-screen-2xl mx-auto px-20 pt-4">
+      <div class="w-full max-w-screen-2xl mx-auto pl-4 pt-4">
         <nav class="bg-white px-6 rounded-lg">
           <div class="flex justify-between h-16">
             <div class="flex items-center space-x-4">
-              <button
-                @click="goBack"
-                class="text-gray-600 hover:text-gray-900 font-bold px-4 py-2"
-              >
-                ← Назад
-              </button>
+              <!-- Фильтр по объектам -->
+              <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium text-gray-700">Объект:</label>
+                <select
+                  v-model="selectedObjectId"
+                  @change="changeObject"
+                  class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  style="min-width: 200px;"
+                >
+                  <option value="">Все объекты</option>
+                  <option v-for="object in authStore.objects" :key="object.id" :value="object.id">
+                    {{ object.title || `Объект ${object.id}` }}
+                  </option>
+                </select>
+              </div>
             </div>
             <div class="flex items-center space-x-4">
               <button
@@ -72,7 +81,14 @@
               </button>
               <button
                 @click="showCreateModal = true"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-bold flex items-center space-x-2"
+                :disabled="!selectedObjectId"
+                :title="selectedObjectId ? 'Создать новую задачу' : 'Выберите объект для создания задачи'"
+                :class="[
+                  'px-4 py-2 rounded-md text-sm font-bold flex items-center space-x-2',
+                  selectedObjectId 
+                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white' 
+                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                ]"
               >
                 <span>Создать задачу</span>
                 <img src="https://app.dev.pto-app.ru/assets/plus.2d709d99.svg" alt="+" class="w-6 h-6" />
@@ -83,7 +99,7 @@
       </div>
 
           <!-- Табы для переключения вида -->
-      <div class="w-full max-w-screen-2xl mx-auto px-20 pb-4">
+      <div class="w-full max-w-screen-2xl mx-auto pl-4 pb-4">
         <div class="border-b border-gray-200">
           <nav class="-mb-px flex">
             <button
@@ -115,7 +131,7 @@
       </div>
 
       <!-- Поиск и фильтры -->
-      <div class="w-full max-w-screen-2xl mx-auto px-20 pb-4">
+      <div class="w-full max-w-screen-2xl mx-auto pl-4 pb-4">
         <div class="bg-white rounded-lg p-4">
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <!-- Поиск -->
@@ -170,7 +186,7 @@
         </div>
       </div>
 
-      <div class="w-full max-w-screen-2xl mx-auto px-20 pb-4">
+      <div class="w-full max-w-screen-2xl mx-auto pl-4 pb-4">
         <div v-if="loading" class="text-center">
           <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
           <p class="mt-2 text-gray-600">Загрузка доски...</p>
@@ -256,7 +272,7 @@
                   <div v-for="attachment in task.attachments" :key="attachment.id" class="text-xs bg-gray-100 rounded p-1 flex justify-between items-center">
                     <span>{{ attachment.file_name }}</span>
                     <button 
-                      @click="downloadFile(attachment)" 
+                      @click.stop="downloadFile(attachment)" 
                       class="text-blue-600 hover:text-blue-800"
                     >
                       <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -315,13 +331,13 @@
               
               <div class="flex justify-end space-x-2 mt-2">
                 <button
-                  @click="viewTask(task)"
+                  @click.stop="viewTask(task)"
                   class="text-green-600 hover:text-green-800 text-xs font-bold"
                 >
                   Подробнее
                 </button>
                 <button
-                  @click="deleteTask(task.id)"
+                  @click.stop="deleteTask(task.id)"
                   class="text-red-600 hover:text-red-800 text-xs font-bold"
                 >
                   Удалить
@@ -412,7 +428,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr
-                v-for="task in filteredAllTasks"
+                v-for="task in displayedTableTasks"
                 :key="task.id"
                 :data-task-id="task.id"
                 :class="{ 'bg-blue-50': selectedTasks.includes(task.id) }"
@@ -420,6 +436,7 @@
               >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <input
+                    v-if="!task.isEmpty"
                     type="checkbox"
                     :value="task.id"
                     v-model="selectedTasks"
@@ -427,10 +444,10 @@
                   />
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {{ task.id }}
+                  {{ task.isEmpty ? '' : task.id }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium relative">
-                  <div class="relative">
+                  <div v-if="!task.isEmpty" class="relative">
                     <button
                       @click="toggleTaskMenu(task.id)"
                       class="p-2 hover:bg-gray-100 rounded-md"
@@ -463,15 +480,16 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div class="truncate" :title="task.title">{{ task.title }}</div>
+                  <div v-if="!task.isEmpty" class="truncate" :title="task.title">{{ task.title }}</div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div class="truncate" :title="task.description || 'Нет описания'">
+                  <div v-if="!task.isEmpty" class="truncate" :title="task.description || 'Нет описания'">
                     {{ task.description || 'Нет описания' }}
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span 
+                    v-if="!task.isEmpty"
                     :class="{
                       'bg-blue-100 text-blue-800': task.status === 'waiting',
                       'bg-orange-100 text-orange-800': task.status === 'in_progress', 
@@ -485,6 +503,7 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span 
+                    v-if="!task.isEmpty"
                     :class="{
                       'bg-red-100 text-red-800': task.priority === 'high',
                       'bg-yellow-100 text-yellow-800': task.priority === 'medium', 
@@ -496,19 +515,19 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div class="truncate">{{ getCreatorName(task.created_by_user_id) }}</div>
+                  <div v-if="!task.isEmpty" class="truncate">{{ getCreatorName(task.created_by_user_id) }}</div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div class="truncate">{{ getUserName(task.assigned_by_user_id) }}</div>
+                  <div v-if="!task.isEmpty" class="truncate">{{ getUserName(task.assigned_by_user_id) }}</div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div class="truncate">{{ getUserName(task.responsible_user_id) }}</div>
+                  <div v-if="!task.isEmpty" class="truncate">{{ getUserName(task.responsible_user_id) }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                  {{ task.deadline ? formatDate(task.deadline) : '-' }}
+                  {{ task.isEmpty ? '' : (task.deadline ? formatDate(task.deadline) : '-') }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                  <div class="flex items-center space-x-1">
+                  <div v-if="!task.isEmpty" class="flex items-center space-x-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
                     </svg>
@@ -516,7 +535,7 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                  <div class="flex items-center space-x-1">
+                  <div v-if="!task.isEmpty" class="flex items-center space-x-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
@@ -524,12 +543,12 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                  {{ formatDate(task.created_at) }}
+                  {{ task.isEmpty ? '' : formatDate(task.created_at) }}
                 </td>
                 <td v-for="field in activeCustomFields" :key="field.id" class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                  {{ field.type === 'date' && task.custom_fields?.[field.id] 
+                  {{ task.isEmpty ? '' : (field.type === 'date' && task.custom_fields?.[field.id] 
                       ? formatDate(task.custom_fields[field.id]) 
-                      : (task.custom_fields?.[field.id] || 'Не заполнено') }}
+                      : (task.custom_fields?.[field.id] || 'Не заполнено')) }}
                 </td>
               </tr>
             </tbody>
@@ -544,7 +563,7 @@
       </div>
 
       <!-- Create Task Modal -->
-      <div v-if="showCreateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div v-if="showCreateModal" class="fixed inset-0 overflow-y-auto h-full w-full z-50" style="background: rgba(245, 245, 245, 0.75);">
         <div class="relative top-10 mx-auto p-6 border w-4/5 max-w-4xl rounded-md bg-white">
           <h3 class="text-lg font-bold text-gray-900 mb-6">Создать задачу</h3>
           <form @submit.prevent="createTask">
@@ -674,13 +693,13 @@
       </div>
 
       <!-- Unified Task Modal (View/Edit) -->
-      <div v-if="showTaskModal && viewingTask" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div v-if="showTaskModal && viewingTask" class="fixed inset-0 overflow-y-auto h-full w-full z-50" style="background: rgba(245, 245, 245, 0.75);">
         <div class="relative top-10 mx-auto p-6 border w-4/5 max-w-6xl rounded-md bg-white">
           <div class="flex justify-between items-start mb-6">
-            <h3 class="text-lg font-bold text-gray-900">
-              {{ isEditMode ? 'Редактировать задачу' : 'Просмотр задачи' }}
-            </h3>
-            <div class="flex space-x-2">
+            <div class="flex items-center space-x-4">
+              <h3 class="text-lg font-bold text-gray-900">
+                {{ isEditMode ? 'Редактировать задачу' : 'Просмотр задачи' }}
+              </h3>
               <button
                 v-if="!isEditMode"
                 @click="enableEditMode"
@@ -688,13 +707,8 @@
               >
                 Редактировать
               </button>
-              <button
-                v-if="isEditMode"
-                @click="cancelEdit"
-                class="px-4 py-2 text-sm font-bold bg-gray-600 text-white rounded-md hover:bg-gray-700"
-              >
-                Отмена
-              </button>
+            </div>
+            <div class="flex space-x-2">
               <button
                 @click="closeTaskModal"
                 class="text-gray-400 hover:text-gray-600 font-bold"
@@ -725,6 +739,20 @@
                     rows="4"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   ></textarea>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Статус</label>
+                  <select
+                    v-model="editingTask.status"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="waiting">Ожидают</option>
+                    <option value="in_progress">В работе</option>
+                    <option value="completed">Выполнены</option>
+                    <option value="blocked">Заблокированы</option>
+                  </select>
                 </div>
                 
                 <div>
@@ -793,6 +821,13 @@
                 </div>
                 
                 <div class="flex justify-start space-x-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    @click="cancelEdit"
+                    class="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                  >
+                    Отмена
+                  </button>
                   <button
                     type="submit"
                     class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
@@ -922,7 +957,7 @@
                     </div>
                     <div class="flex space-x-2">
                       <button 
-                        @click="downloadFile(attachment)" 
+                        @click.stop="downloadFile(attachment)" 
                         class="text-blue-600 hover:text-blue-800 text-sm font-bold"
                       >
                         Скачать
@@ -990,7 +1025,7 @@
     </div>
 
     <!-- Custom Fields Management Modal -->
-    <div v-if="showCustomFieldModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div v-if="showCustomFieldModal" class="fixed inset-0 overflow-y-auto h-full w-full z-50" style="background: rgba(245, 245, 245, 0.75);">
       <div class="relative top-20 mx-auto p-5 border w-2/3 max-w-2xl rounded-md bg-white">
         <div class="flex justify-between items-start mb-4">
           <h3 class="text-lg font-bold text-gray-900">
@@ -1144,7 +1179,7 @@
 </template>
 
 <script>
-import { ref, onMounted, reactive, computed } from 'vue';
+import { ref, onMounted, reactive, computed, watch, nextTick, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import axios from 'axios';
@@ -1165,6 +1200,7 @@ export default {
     const searchQuery = ref('');
     const priorityFilter = ref('');
     const responsibleFilter = ref('');
+    const selectedObjectId = ref(''); // Для фильтра объектов
     const tasks = ref({
       waiting: [],
       in_progress: [],
@@ -1189,6 +1225,7 @@ export default {
       id: null,
       title: '',
       description: '',
+      status: 'waiting',
       priority: 'medium',
       deadline: '',
       assigned_by_user_id: '',
@@ -1217,6 +1254,10 @@ export default {
     
     // Task menu state
     const openTaskMenuId = ref(null);
+
+    // Sortable instances storage
+    const sortableInstances = ref({});
+    const initializingTimeout = ref(null);
 
     const taskComments = computed(() => {
       return viewingTask.value?.comments || [];
@@ -1274,6 +1315,24 @@ export default {
       return filterTasks(allTasks.value);
     });
 
+    // Задачи для отображения в таблице (минимум 10 строк)
+    const displayedTableTasks = computed(() => {
+      const filtered = filteredAllTasks.value;
+      const minRows = 10;
+      
+      if (filtered.length >= minRows) {
+        return filtered;
+      }
+      
+      // Добавляем пустые строки до минимального количества
+      const emptyRows = Array(minRows - filtered.length).fill(null).map((_, index) => ({
+        id: `empty-${index}`,
+        isEmpty: true
+      }));
+      
+      return [...filtered, ...emptyRows];
+    });
+
     // Фильтрованные задачи для канбан вида (по колонкам)
     const filteredTasks = computed(() => {
       const result = {
@@ -1307,6 +1366,12 @@ export default {
 
     const fetchObjectName = async () => {
       try {
+        // Если это специальный случай "все объекты"
+        if (route.params.objectId === 'all') {
+          currentObjectName.value = 'Все объекты';
+          return;
+        }
+        
         // Получаем список объектов и находим нужный по ID
         await authStore.fetchObjects();
         const currentObject = authStore.objects.find(obj => obj.id.toString() === route.params.objectId);
@@ -1321,7 +1386,10 @@ export default {
       }
     };
 
-    const fetchBoard = async () => {
+    const fetchBoard = async (loadAll = false) => {
+      // Автоматически определяем, нужно ли загружать все объекты
+      const shouldLoadAll = loadAll || route.params.objectId === 'all';
+      
       loading.value = true;
       try {
         // Загружаем пользователя если его нет
@@ -1334,15 +1402,29 @@ export default {
           await authStore.fetchUsers();
         }
         
-        // Загружаем название объекта
-        await fetchObjectName();
+        // Загружаем название объекта (только если не загружаем все объекты)
+        if (!shouldLoadAll) {
+          await fetchObjectName();
+        } else {
+          currentObjectName.value = 'Все объекты';
+        }
         
-        const response = await axios.get(`/api/boards/${route.params.objectId}`);
+        // Выбираем URL в зависимости от того, загружаем ли все объекты
+        const url = shouldLoadAll ? '/api/boards' : `/api/boards/${route.params.objectId}`;
+        const response = await axios.get(url);
+        
         board.value = response.data.board;
         tasks.value = response.data.tasks;
         
-        // Initialize sortable after data is loaded
-        setTimeout(initializeSortable, 100);
+        // Initialize sortable after data is loaded and DOM is rendered
+        await nextTick();
+        // Дополнительный nextTick чтобы убедиться что все задачи отрендерились
+        await nextTick();
+        
+        // Инициализируем только если мы в канбан режиме
+        if (currentView.value === 'kanban') {
+          debouncedInitializeSortable();
+        }
       } catch (error) {
         console.error('Error fetching board:', error);
       } finally {
@@ -1350,43 +1432,155 @@ export default {
       }
     };
 
+    const destroySortableInstances = () => {
+      Object.values(sortableInstances.value).forEach(instance => {
+        if (instance && instance.destroy) {
+          instance.destroy();
+        }
+      });
+      sortableInstances.value = {};
+    };
+
     const initializeSortable = () => {
+      // Destroy existing instances first
+      destroySortableInstances();
+      
       Object.keys(columns).forEach(status => {
         const element = columnRefs.value[status];
+        
         if (element) {
-          new Sortable(element, {
+          // Проверяем что в колонке есть задачи или хотя бы готовы для них элементы
+          const tasksInColumn = filteredTasks.value[status] || [];
+          
+          const sortableInstance = new Sortable(element, {
             group: 'tasks',
             animation: 150,
-            onEnd: async (evt) => {
-              const taskId = evt.item.dataset.taskId;
+            onStart: function(evt) {
+              // Drag start
+            },
+            onEnd: function(evt) {
+              // Get the new status from the target column
               const newStatus = evt.to.dataset.status;
+              const taskId = parseInt(evt.item.dataset.taskId);
               const newIndex = evt.newIndex;
               
-              await updateTaskStatus(taskId, newStatus, newIndex);
+              // Update task status on server
+              if (taskId && newStatus) {
+                updateTaskStatus(taskId, newStatus, newIndex);
+              }
             },
+            onAdd: function(evt) {
+              // Task added to column
+            },
+            onUpdate: function(evt) {
+              // Task order updated
+            },
+            onSort: function(evt) {
+              // Sort event
+            },
+            onRemove: function(evt) {
+              // Task removed from column
+            }
           });
+          
+          sortableInstances.value[status] = sortableInstance;
         }
       });
     };
 
+    // Debounced version to prevent multiple initializations
+    const debouncedInitializeSortable = () => {
+      if (initializingTimeout.value) {
+        clearTimeout(initializingTimeout.value);
+      }
+      
+      initializingTimeout.value = setTimeout(() => {
+        if (currentView.value === 'kanban') {
+          initializeSortable();
+        }
+        initializingTimeout.value = null;
+      }, 100);
+    };
+
     const updateTaskStatus = async (taskId, newStatus, newIndex) => {
       try {
+        // Временно отключаем watch чтобы избежать переинициализации Sortable
+        const isUpdating = ref(true);
+        
         await axios.put(`/api/tasks/${taskId}/status`, {
           status: newStatus,
           position: newIndex,
         });
         
-        // Refresh board data
-        await fetchBoard();
+        // Обновляем локальные данные без полной перезагрузки
+        const taskToUpdate = allTasks.value.find(task => task.id === taskId);
+        if (taskToUpdate) {
+          // Удаляем задачу из старой колонки
+          const oldStatus = taskToUpdate.status;
+          const oldIndex = tasks.value[oldStatus].findIndex(task => task.id === taskId);
+          if (oldIndex !== -1) {
+            tasks.value[oldStatus].splice(oldIndex, 1);
+          }
+          
+          // Обновляем статус задачи
+          taskToUpdate.status = newStatus;
+          
+          // Добавляем задачу в новую колонку
+          if (!tasks.value[newStatus]) {
+            tasks.value[newStatus] = [];
+          }
+          tasks.value[newStatus].splice(newIndex, 0, taskToUpdate);
+        }
+        
+        isUpdating.value = false;
       } catch (error) {
         console.error('Error updating task status:', error);
-        // Refresh to revert changes
+        // При ошибке делаем полную перезагрузку
         await fetchBoard();
       }
     };
 
+    // Watch for filter changes and reinitialize sortable
+    watch([searchQuery, priorityFilter, responsibleFilter], async () => {
+      if (currentView.value === 'kanban') {
+        await nextTick();
+        debouncedInitializeSortable();
+      }
+    });
+
+    // Watch for view changes
+    watch(currentView, async (newView) => {
+      if (newView === 'kanban') {
+        await nextTick();
+        debouncedInitializeSortable();
+      }
+    });
+
+    // Watch for tasks data changes (when loaded from server)
+    watch(tasks, async (newTasks) => {
+      if (currentView.value === 'kanban' && newTasks && Object.keys(newTasks).length > 0) {
+        await nextTick();
+        await nextTick(); // Дополнительный nextTick для полной отрисовки
+        debouncedInitializeSortable();
+      }
+    }, { immediate: false, deep: false }); // Убираем deep watch чтобы не срабатывать при каждом изменении внутри массивов
+
+    // Watch for route changes (when switching between objects)
+    watch(() => route.params.objectId, async (newObjectId, oldObjectId) => {
+      if (newObjectId && newObjectId !== oldObjectId) {
+        selectedObjectId.value = newObjectId === 'all' ? '' : newObjectId;
+        await fetchBoard(); // fetchBoard автоматически определит нужно ли загружать все
+      }
+    });
+
     const createTask = async () => {
       try {
+        // Проверяем, что мы не в режиме "Все объекты"
+        if (!selectedObjectId.value) {
+          alert('Для создания задачи выберите конкретный объект');
+          return;
+        }
+        
         await axios.post('/api/tasks', {
           board_id: board.value.id,
           title: newTask.title,
@@ -1413,6 +1607,7 @@ export default {
         editingTask.id = viewingTask.value.id;
         editingTask.title = viewingTask.value.title;
         editingTask.description = viewingTask.value.description;
+        editingTask.status = viewingTask.value.status;
         editingTask.priority = viewingTask.value.priority;
         editingTask.deadline = viewingTask.value.deadline;
         editingTask.assigned_by_user_id = viewingTask.value.assigned_by_user_id || '';
@@ -1432,6 +1627,7 @@ export default {
         await axios.put(`/api/tasks/${editingTask.id}`, {
           title: editingTask.title,
           description: editingTask.description,
+          status: editingTask.status,
           priority: editingTask.priority,
           deadline: editingTask.deadline,
           assigned_by_user_id: editingTask.assigned_by_user_id || null,
@@ -1507,14 +1703,20 @@ export default {
         const response = await axios.get(`/api/attachments/${attachment.id}/download`);
         const { url, file_name } = response.data;
         
-        // Create a temporary link to download the file directly
+        // Fetch the file as blob and create download link
+        const fileResponse = await fetch(url);
+        const blob = await fileResponse.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        
         const link = document.createElement('a');
-        link.href = url;
+        link.href = downloadUrl;
         link.download = file_name;
-        link.target = '_blank'; // Открыть в новой вкладке
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        
+        // Clean up the blob URL
+        window.URL.revokeObjectURL(downloadUrl);
       } catch (error) {
         console.error('Error downloading file:', error);
         alert('Ошибка скачивания файла');
@@ -1551,8 +1753,20 @@ export default {
       return date.toLocaleDateString('ru-RU');
     };
 
-    const goBack = () => {
-      router.push('/');
+    const changeObject = async () => {
+      const currentObjectId = route.params.objectId;
+      
+      if (selectedObjectId.value) {
+        // Переход на конкретный объект только если он отличается от текущего
+        if (selectedObjectId.value !== currentObjectId) {
+          router.push(`/board/${selectedObjectId.value}`);
+        }
+      } else {
+        // Переход на "Все объекты" если мы не там
+        if (currentObjectId !== 'all') {
+          router.push('/board/all');
+        }
+      }
     };
 
     const getPriorityText = (priority) => {
@@ -1724,6 +1938,7 @@ export default {
         id: null,
         title: '',
         description: '',
+        status: 'waiting',
         priority: 'medium',
         deadline: '',
         assigned_by_user_id: '',
@@ -1736,9 +1951,7 @@ export default {
     const fetchCustomFields = async (includeInactive = false) => {
       try {
         const endpoint = includeInactive ? '/api/custom-fields/all' : '/api/custom-fields';
-        console.log('fetchCustomFields:', { endpoint, includeInactive });
         const response = await axios.get(endpoint);
-        console.log('fetchCustomFields response:', response.data);
         customFields.value = response.data;
       } catch (error) {
         console.error('Error fetching custom fields:', error);
@@ -1746,8 +1959,6 @@ export default {
     };
 
     const openCustomFieldModal = async (field = null) => {
-      console.log('openCustomFieldModal called with:', field);
-      
       if (field) {
         editingCustomField.value = field;
         Object.assign(customFieldForm, {
@@ -1855,11 +2066,6 @@ export default {
     };
 
     const displayedFields = computed(() => {
-      console.log('displayedFields computed:', {
-        customFields: customFields.value,
-        showInactiveFields: showInactiveFields.value,
-        length: customFields.value.length
-      });
       return customFields.value.filter(field => showInactiveFields.value || field.is_active);
     });
 
@@ -1925,7 +2131,20 @@ export default {
       }
     };
 
-    onMounted(() => {
+    const handleTaskMouseDown = (taskId, event) => {
+      // Не preventDefault, чтобы не блокировать Sortable
+    };
+
+    onMounted(async () => {
+      // Инициализируем selectedObjectId текущим объектом из route
+      selectedObjectId.value = route.params.objectId === 'all' ? '' : route.params.objectId;
+      
+      // Инициализируем аутентификацию
+      authStore.initializeAuth();
+      
+      // Загружаем объекты для фильтра
+      await authStore.fetchObjects();
+      
       fetchBoard();
       fetchCustomFields(true); // Загружаем все поля включая неактивные
       
@@ -1937,8 +2156,19 @@ export default {
       });
     });
 
+    onUnmounted(() => {
+      destroySortableInstances();
+      
+      // Очищаем timeout если он активен
+      if (initializingTimeout.value) {
+        clearTimeout(initializingTimeout.value);
+        initializingTimeout.value = null;
+      }
+    });
+
     return {
       route,
+      authStore,
       loading,
       board,
       currentObjectName,
@@ -1946,6 +2176,7 @@ export default {
       searchQuery,
       priorityFilter,
       responsibleFilter,
+      selectedObjectId,
       allTasks,
       selectedTasks,
       columns,
@@ -1974,7 +2205,7 @@ export default {
       deleteAttachment,
       formatFileSize,
       formatDate,
-      goBack,
+      changeObject,
       getPriorityText,
       getUserName,
       getCreatorName,
@@ -1986,6 +2217,7 @@ export default {
       deleteSelectedTasks,
       filteredAllTasks,
       filteredTasks,
+      displayedTableTasks,
       clearFilters,
       customFields,
       activeCustomFields,
@@ -2008,7 +2240,31 @@ export default {
       shouldShowMenuAbove,
       canDeleteComment,
       deleteComment,
+      handleTaskMouseDown,
     };
   },
 };
 </script> 
+
+<style scoped>
+.sortable-ghost {
+  opacity: 0.5;
+  background: #c8ebfb;
+}
+
+.sortable-chosen {
+  background: #f3f4f6;
+}
+
+.sortable-drag {
+  background: #ffffff;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: rotate(5deg);
+}
+
+.sortable-fallback {
+  background: #ffffff;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  cursor: grabbing;
+}
+</style>

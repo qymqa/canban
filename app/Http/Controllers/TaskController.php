@@ -75,6 +75,7 @@ class TaskController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'status' => 'required|in:waiting,in_progress,completed,blocked',
             'priority' => 'required|in:low,medium,high',
             'deadline' => 'nullable|date',
             'assigned_by_user_id' => 'nullable|string',
@@ -85,7 +86,7 @@ class TaskController extends Controller
         // Валидируем дополнительные поля
         $this->validateCustomFields($request->custom_fields ?? []);
 
-        $task->update($request->only(['title', 'description', 'priority', 'deadline', 'assigned_by_user_id', 'responsible_user_id']));
+        $task->update($request->only(['title', 'description', 'status', 'priority', 'deadline', 'assigned_by_user_id', 'responsible_user_id']));
 
         // Обновляем значения дополнительных полей
         $this->saveCustomFieldValues($task, $request->custom_fields ?? []);
