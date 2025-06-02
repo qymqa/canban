@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 class AttachmentController extends Controller
 {
-    private $apiBaseUrl = 'https://api.staging.pto-app.ru/api/v1';
+    private $apiBaseUrl = 'https://api.pto-app.ru/api/v1';
 
     public function store(Request $request, Task $task): JsonResponse
     {

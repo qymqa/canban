@@ -75,7 +75,7 @@ export default defineConfig({
 ```php
 class AuthController extends Controller
 {
-    private $apiBaseUrl = 'https://api.staging.pto-app.ru/api/v1';
+    private $apiBaseUrl = 'https://api.pto-app.ru/api/v1';
 
     public function login(Request $request): JsonResponse
     {

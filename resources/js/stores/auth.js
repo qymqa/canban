@@ -32,6 +32,31 @@ export const useAuthStore = defineStore('auth', {
             }
         },
 
+        async setTokenFromUrl(token) {
+            try {
+                // Сначала проверяем валидность токена
+                const response = await axios.post('/api/auth/validate-token', {
+                    token: token
+                });
+
+                if (!response.data.valid) {
+                    throw new Error(response.data.message || 'Неверный токен');
+                }
+
+                // Если токен валидный, сохраняем его
+                this.token = token;
+                this.user = response.data.user;
+                localStorage.setItem('token', this.token);
+                axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+                
+                return true;
+            } catch (error) {
+                // Очищаем данные при ошибке
+                this.logout();
+                throw error;
+            }
+        },
+
         async fetchUser() {
             try {
                 const response = await axios.get('/api/auth/user');

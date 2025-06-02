@@ -56,6 +56,7 @@ your-app/
 │   └── views/
 │       ├── Login.vue          # Страница входа
 │       └── MainView.vue       # Основной компонент
+│       └── TokenAuth.vue      # Авторизация по токену из URL
 ├── routes/
 │   ├── api.php                # API маршруты
 │   └── web.php                # Веб маршруты (SPA)
@@ -79,7 +80,7 @@ use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
-    private $apiBaseUrl = 'https://api.staging.pto-app.ru/api/v1';
+    private $apiBaseUrl = 'https://api.pto-app.ru/api/v1';
 
     public function login(Request $request): JsonResponse
     {
@@ -594,7 +595,7 @@ APP_NAME="Your App Name"
 APP_URL=https://your-app.domain.com
 
 # API основного приложения
-MAIN_API_URL=https://api.staging.pto-app.ru/api/v1
+MAIN_API_URL=https://api.pto-app.ru/api/v1
 
 # База данных
 DB_CONNECTION=mysql
@@ -625,6 +626,47 @@ server {
         include fastcgi_params;
     }
 }
+```
+
+### 7.3 Передача токена из родительского приложения
+
+Приложение поддерживает автоматическую авторизацию через URL параметры:
+
+**Способ 1: URL параметр (рекомендуется)**
+```
+https://your-app.domain.com/auth?token=your-jwt-token
+```
+
+После получения токена приложение:
+1. Проверяет валидность токена через API
+2. Сохраняет токен в localStorage
+3. Загружает данные пользователя
+4. Делает редирект на `/manager` (или ваш главный маршрут)
+
+**Способ 2: PostMessage API**
+```javascript
+// В родительском приложении
+window.postMessage({
+    type: 'AUTH_TOKEN',
+    token: 'your-jwt-token'
+}, '*');
+
+// В канбан приложении
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'AUTH_TOKEN') {
+        authStore.setToken(event.data.token);
+    }
+});
+```
+
+**Встраивание через iframe:**
+```html
+<iframe 
+    src="https://your-app.domain.com/auth?token=your-jwt-token" 
+    width="100%" 
+    height="800px"
+    frameborder="0">
+</iframe>
 ```
 
 ---

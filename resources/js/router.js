@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Login from './views/Login.vue';
 import Board from './views/Board.vue';
+import TokenAuth from './views/TokenAuth.vue';
 import { useAuthStore } from './stores/auth';
 
 const routes = [
@@ -10,8 +11,17 @@ const routes = [
         component: Login,
     },
     {
+        path: '/auth',
+        name: 'TokenAuth',
+        component: TokenAuth,
+    },
+    {
         path: '/',
         redirect: '/board/all'
+    },
+    {
+        path: '/manager',
+        redirect: '/board/all' // Редирект на основную доску
     },
     {
         path: '/board/:objectId',
@@ -28,6 +38,12 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
     const authStore = useAuthStore();
+    
+    // Разрешаем доступ к странице токен-авторизации без проверки
+    if (to.name === 'TokenAuth') {
+        next();
+        return;
+    }
     
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
         next('/login');

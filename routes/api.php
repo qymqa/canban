@@ -9,14 +9,13 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CustomFieldController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::get('/user', [AuthController::class, 'getUser']);
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::get('/auth/user', [AuthController::class, 'getUser']);
 Route::get('/auth/objects', [AuthController::class, 'getObjects']);
 Route::get('/auth/users', [AuthController::class, 'getUsers']);
+Route::post('/auth/validate-token', [AuthController::class, 'validateToken']);
 
 Route::post('/boards/task-counts', [BoardController::class, 'getTaskCounts']);
 Route::get('/boards/{objectId}', [BoardController::class, 'show']);

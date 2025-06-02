@@ -8,7 +8,12 @@ use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
-    private $apiBaseUrl = 'https://api.staging.pto-app.ru/api/v1';
+    private $apiBaseUrl;
+
+    public function __construct()
+    {
+        $this->apiBaseUrl = env('MAIN_API_URL', 'https://api.pto-app.ru/api/v1');
+    }
 
     public function login(Request $request): JsonResponse
     {
@@ -124,6 +129,36 @@ class AuthController extends Controller
 
         } catch (\Exception $e) {
             return response()->json(['message' => 'Ошибка сервера'], 500);
+        }
+    }
+
+    public function validateToken(Request $request): JsonResponse
+    {
+        $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        $token = $request->token;
+
+        try {
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => "Bearer {$token}",
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])->get($this->apiBaseUrl . '/user');
+
+            if ($response->successful()) {
+                $userData = $response->json();
+                return response()->json([
+                    'valid' => true,
+                    'user' => $userData['data'] ?? $userData
+                ]);
+            }
+
+            return response()->json(['valid' => false, 'message' => 'Неверный токен'], 401);
+
+        } catch (\Exception $e) {
+            return response()->json(['valid' => false, 'message' => 'Ошибка проверки токена'], 500);
         }
     }
 }
