@@ -36,7 +36,7 @@ const router = createRouter({
     routes,
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore();
     
     // Разрешаем доступ к странице токен-авторизации без проверки
@@ -45,6 +45,53 @@ router.beforeEach((to, from, next) => {
         return;
     }
     
+    // Проверяем наличие нового токена в URL
+    const urlParams = new URLSearchParams(to.query);
+    const urlToken = urlParams.get('token') || to.query.token;
+    
+    if (urlToken) {
+        // Если есть токен в URL
+        if (authStore.isAuthenticated && urlToken !== authStore.token) {
+            // Пользователь уже авторизован, но токен новый - обновляем
+            try {
+                console.log('Обнаружен новый токен, обновляем авторизацию');
+                await authStore.setTokenFromUrl(urlToken);
+                
+                // Убираем токен из URL после успешной авторизации
+                const newQuery = { ...to.query };
+                delete newQuery.token;
+                
+                next({ 
+                    path: to.path, 
+                    query: newQuery,
+                    replace: true 
+                });
+                return;
+            } catch (error) {
+                console.error('Ошибка обновления токена:', error);
+                // Если не удалось обновить токен, редиректим на страницу авторизации
+                next('/auth?token=' + urlToken);
+                return;
+            }
+        } else if (!authStore.isAuthenticated) {
+            // Пользователь не авторизован и есть токен - редиректим на страницу авторизации
+            next('/auth?token=' + urlToken);
+            return;
+        } else {
+            // Токен тот же самый - просто убираем его из URL
+            const newQuery = { ...to.query };
+            delete newQuery.token;
+            
+            next({ 
+                path: to.path, 
+                query: newQuery,
+                replace: true 
+            });
+            return;
+        }
+    }
+    
+    // Обычная проверка авторизации
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
         next('/login');
     } else if (to.path === '/login' && authStore.isAuthenticated) {

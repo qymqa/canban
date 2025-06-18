@@ -36,7 +36,7 @@
           </button>
           
           <a
-            href="https://app.staging.pto-app.ru/analytics"
+            href="https://app.pto-app.ru/analytics"
             target="_parent"
             rel="noopener noreferrer"
             class="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50"
@@ -63,7 +63,7 @@
                   v-model="selectedObjectId"
                   @change="changeObject"
                   class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                  style="min-width: 200px;"
+                  style="width: 300px;"
                 >
                   <option value="">Все объекты</option>
                   <option v-for="object in authStore.objects" :key="object.id" :value="object.id">

@@ -8,6 +8,7 @@ export const useAuthStore = defineStore('auth', {
         objects: [],
         objectsMeta: null,
         users: [],
+        tokenCheckInterval: null,
     }),
 
     getters: {
@@ -22,12 +23,37 @@ export const useAuthStore = defineStore('auth', {
                     password,
                 });
                 
-                this.token = response.data.data.access_token;
-                localStorage.setItem('token', this.token);
-                axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+                const newToken = response.data.data.access_token;
+                await this.setToken(newToken);
                 
                 return true;
             } catch (error) {
+                throw error;
+            }
+        },
+
+        async setToken(newToken) {
+            // Проверяем, отличается ли новый токен от текущего
+            if (this.token === newToken) {
+                return;
+            }
+
+            // Останавливаем предыдущий интервал проверки
+            this.stopTokenValidation();
+
+            // Устанавливаем новый токен
+            this.token = newToken;
+            localStorage.setItem('token', this.token);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+            
+            // Загружаем данные пользователя с новым токеном
+            try {
+                await this.fetchUser();
+                
+                // Запускаем периодическую проверку токена
+                this.startTokenValidation();
+            } catch (error) {
+                this.logout();
                 throw error;
             }
         },
@@ -43,17 +69,58 @@ export const useAuthStore = defineStore('auth', {
                     throw new Error(response.data.message || 'Неверный токен');
                 }
 
-                // Если токен валидный, сохраняем его
-                this.token = token;
+                // Если токен валидный, устанавливаем его
+                await this.setToken(token);
                 this.user = response.data.user;
-                localStorage.setItem('token', this.token);
-                axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
                 
                 return true;
             } catch (error) {
                 // Очищаем данные при ошибке
                 this.logout();
                 throw error;
+            }
+        },
+
+        async validateCurrentToken() {
+            if (!this.token) {
+                return false;
+            }
+
+            try {
+                const response = await axios.post('/api/auth/validate-token', {
+                    token: this.token
+                });
+
+                if (!response.data.valid) {
+                    console.log('Токен стал невалидным, выполняется logout');
+                    this.logout();
+                    return false;
+                }
+
+                // Обновляем данные пользователя, если они изменились
+                if (response.data.user) {
+                    this.user = response.data.user;
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Ошибка проверки токена:', error);
+                this.logout();
+                return false;
+            }
+        },
+
+        startTokenValidation() {
+            // Проверяем токен каждые 5 минут
+            this.tokenCheckInterval = setInterval(() => {
+                this.validateCurrentToken();
+            }, 5 * 60 * 1000);
+        },
+
+        stopTokenValidation() {
+            if (this.tokenCheckInterval) {
+                clearInterval(this.tokenCheckInterval);
+                this.tokenCheckInterval = null;
             }
         },
 
@@ -89,6 +156,7 @@ export const useAuthStore = defineStore('auth', {
         },
 
         logout() {
+            this.stopTokenValidation();
             this.user = null;
             this.token = null;
             this.objects = [];
@@ -101,7 +169,22 @@ export const useAuthStore = defineStore('auth', {
         initializeAuth() {
             if (this.token) {
                 axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+                // Запускаем периодическую проверку токена
+                this.startTokenValidation();
             }
+        },
+
+        // Проверка URL на новый токен (для случаев, когда пользователь уже авторизован)
+        checkUrlForNewToken() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlToken = urlParams.get('token');
+            
+            if (urlToken && urlToken !== this.token) {
+                console.log('Обнаружен новый токен в URL, обновляем авторизацию');
+                return this.setTokenFromUrl(urlToken);
+            }
+            
+            return null;
         },
     },
 }); 
