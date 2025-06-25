@@ -11,7 +11,12 @@ use Illuminate\Support\Facades\Log;
 
 class AttachmentController extends Controller
 {
-    private $apiBaseUrl = 'https://api.pto-app.ru/api/v1';
+    private $apiBaseUrl;
+
+    public function __construct()
+    {
+        $this->apiBaseUrl = env('MAIN_API_URL', 'https://api.pto-app.ru/api/v1');
+    }
 
     public function store(Request $request, Task $task): JsonResponse
     {

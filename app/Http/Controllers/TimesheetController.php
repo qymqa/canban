@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use App\Exports\TimesheetExport;
-use Maatwebsite\Excel\Facades\Excel;
+// use Maatwebsite\Excel\Facades\Excel; // Removed Excel dependency
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
@@ -20,6 +20,88 @@ class TimesheetController extends Controller
     public function __construct()
     {
         $this->apiBaseUrl = env('MAIN_API_URL', 'https://api.pto-app.ru/api/v1');
+    }
+
+    /**
+     * Получить данные объекта из API
+     */
+    private function getObjectData($objectId, $token)
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => $token,
+                'Accept' => 'application/json',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])->get($this->apiBaseUrl . '/objects/' . $objectId);
+
+            if ($response->successful()) {
+                return $response->json()['data'] ?? null;
+            }
+        } catch (\Exception $e) {
+            \Log::error("Error fetching object data: " . $e->getMessage());
+        }
+        
+        return null;
+    }
+
+    /**
+     * Получить настройки работы из данных объекта
+     */
+    private function getWorkSettingsFromObject($objectData)
+    {
+        $workHoursPerDay = $objectData['work_hours_per_day'] ?? env('WORK_HOURS_PER_DAY', 8);
+        $workStartTime = $objectData['workday_start_time'] ?? env('WORK_START_TIME', '09:00');
+        $timezone = $objectData['time_zone'] ?? env('WORK_TIMEZONE', 'Europe/Moscow');
+        $workDaysPerWeek = $objectData['work_days_per_week'] ?? [];
+        
+        // Карта соответствия дней недели
+        $dayMap = [
+            'mon' => 1, 'monday' => 1,
+            'tue' => 2, 'tuesday' => 2, 
+            'wed' => 3, 'wednesday' => 3,
+            'thu' => 4, 'thursday' => 4,
+            'fri' => 5, 'friday' => 5,
+            'sat' => 6, 'saturday' => 6,
+            'sun' => 0, 'sunday' => 0,
+        ];
+        
+        // Вычисляем выходные дни
+        $weekendDays = [];
+        if (is_array($workDaysPerWeek) && !empty($workDaysPerWeek)) {
+            // В API передаются именно выходные дни, а не рабочие
+            $weekendDayNumbers = [];
+            foreach ($workDaysPerWeek as $day) {
+                $dayLower = strtolower($day);
+                if (isset($dayMap[$dayLower])) {
+                    $weekendDayNumbers[] = $dayMap[$dayLower];
+                }
+            }
+            
+            // Выходные дни из API
+            $weekendDays = $weekendDayNumbers;
+        } elseif (is_numeric($workDaysPerWeek)) {
+            // Старая логика для числового формата
+            if ($workDaysPerWeek == 5) {
+                $weekendDays = [6, 0]; // Суббота и воскресенье
+            } elseif ($workDaysPerWeek == 6) {
+                $weekendDays = [0]; // Только воскресенье
+            } elseif ($workDaysPerWeek == 7) {
+                $weekendDays = []; // Без выходных
+            }
+        } else {
+            // Дефолтные выходные
+            $weekendDays = explode(',', env('WEEKEND_DAYS', '6,0'));
+            $weekendDays = array_map('intval', $weekendDays);
+        }
+
+        return [
+            'work_hours_per_day' => $workHoursPerDay,
+            'work_start_time' => $workStartTime,
+            'timezone' => $timezone,
+            'weekend_days' => $weekendDays,
+            'work_days_per_week' => is_array($workDaysPerWeek) ? count($workDaysPerWeek) : $workDaysPerWeek,
+            'work_days_list' => $workDaysPerWeek, // Оригинальный список для отображения
+        ];
     }
 
     /**
@@ -39,6 +121,23 @@ class TimesheetController extends Controller
         }
 
         try {
+            // Получаем данные объекта
+            $objectData = null;
+            if ($request->object_id !== 'all') {
+                $objectData = $this->getObjectData($request->object_id, $token);
+            }
+
+            // Получаем настройки работы из объекта или используем дефолтные
+            $workSettings = $objectData 
+                ? $this->getWorkSettingsFromObject($objectData)
+                : [
+                    'work_hours_per_day' => env('WORK_HOURS_PER_DAY', 8),
+                    'work_start_time' => env('WORK_START_TIME', '09:00'),
+                    'timezone' => env('WORK_TIMEZONE', 'Europe/Moscow'),
+                    'weekend_days' => explode(',', env('WEEKEND_DAYS', '6,0')),
+                    'work_days_per_week' => 5,
+                ];
+
             // Получаем данные табеля за месяц
             $timesheetData = Timesheet::getMonthlyTimesheet(
                 $request->object_id,
@@ -51,13 +150,7 @@ class TimesheetController extends Controller
                 return response()->json([
                     'timesheet' => [],
                     'calendar' => [],
-                    'work_settings' => [
-                        'work_hours_per_day' => env('WORK_HOURS_PER_DAY', 8),
-                        'work_start_time' => env('WORK_START_TIME', '09:00'),
-                        'timezone' => env('WORK_TIMEZONE', 'Europe/Moscow'),
-                        'weekend_days' => explode(',', env('WEEKEND_DAYS', '6,0')),
-                        'service_start_date' => env('SERVICE_START_DATE', '2025-01-01'),
-                    ],
+                    'work_settings' => $workSettings,
                 ]);
             }
 
@@ -95,7 +188,7 @@ class TimesheetController extends Controller
                     $days[] = [
                         'date' => $date->format('Y-m-d'),
                         'day_of_week' => $date->dayOfWeek,
-                        'is_weekend' => $this->isWeekend($date),
+                        'is_weekend' => $this->isWeekendWithSettings($date, $workSettings['weekend_days']),
                         'is_holiday' => $this->isHoliday($date),
                         'hours_worked' => $timesheet ? $timesheet->hours_worked : 0,
                         'has_report' => $timesheet ? $timesheet->has_report : false,
@@ -120,22 +213,16 @@ class TimesheetController extends Controller
 
             return response()->json([
                 'timesheet' => $result,
-                'calendar' => $calendar->map(function ($date) {
+                'calendar' => $calendar->map(function ($date) use ($workSettings) {
                     return [
                         'date' => $date->format('Y-m-d'),
                         'day' => $date->day,
                         'day_of_week' => $date->dayOfWeek,
-                        'is_weekend' => $this->isWeekend($date),
+                        'is_weekend' => $this->isWeekendWithSettings($date, $workSettings['weekend_days']),
                         'is_holiday' => $this->isHoliday($date),
                     ];
                 })->toArray(),
-                'work_settings' => [
-                    'work_hours_per_day' => env('WORK_HOURS_PER_DAY', 8),
-                    'work_start_time' => env('WORK_START_TIME', '09:00'),
-                    'timezone' => env('WORK_TIMEZONE', 'Europe/Moscow'),
-                    'weekend_days' => explode(',', env('WEEKEND_DAYS', '6,0')),
-                    'service_start_date' => env('SERVICE_START_DATE', '2025-01-01'),
-                ],
+                'work_settings' => $workSettings,
             ]);
 
         } catch (\Exception $e) {
@@ -280,6 +367,14 @@ class TimesheetController extends Controller
     }
 
     /**
+     * Проверить, является ли день выходным с настройками объекта
+     */
+    private function isWeekendWithSettings($date, $weekendDays)
+    {
+        return in_array($date->dayOfWeek, array_map('intval', $weekendDays));
+    }
+
+    /**
      * Проверить, является ли день праздничным
      */
     private function isHoliday($date)
@@ -310,7 +405,7 @@ class TimesheetController extends Controller
     }
 
     /**
-     * Экспорт табеля в Excel
+     * Экспорт табеля в CSV
      */
     public function exportExcel(Request $request)
     {
@@ -326,8 +421,25 @@ class TimesheetController extends Controller
         }
 
         try {
+            // Получаем данные объекта
+            $objectData = null;
+            if ($request->object_id !== 'all') {
+                $objectData = $this->getObjectData($request->object_id, $token);
+            }
+
+            // Получаем настройки работы из объекта или используем дефолтные
+            $workSettings = $objectData 
+                ? $this->getWorkSettingsFromObject($objectData)
+                : [
+                    'work_hours_per_day' => env('WORK_HOURS_PER_DAY', 8),
+                    'work_start_time' => env('WORK_START_TIME', '09:00'),
+                    'timezone' => env('WORK_TIMEZONE', 'Europe/Moscow'),
+                    'weekend_days' => explode(',', env('WEEKEND_DAYS', '6,0')),
+                    'work_days_per_week' => 5,
+                ];
+
             // Получаем данные табеля
-            $timesheetResponse = $this->getTimesheetData($request, $token);
+            $timesheetResponse = $this->getTimesheetData($request, $token, $workSettings);
             if (!$timesheetResponse['success']) {
                 return response()->json(['message' => $timesheetResponse['message']], 500);
             }
@@ -350,9 +462,16 @@ class TimesheetController extends Controller
             );
 
             $monthName = $this->getMonthName($request->month);
-            $fileName = "timesheet_{$objectName}_{$monthName}_{$request->year}.xlsx";
+            $fileName = "timesheet_{$objectName}_{$monthName}_{$request->year}.csv";
+            $fileNameEncoded = rawurlencode($fileName);
 
-            return Excel::download($export, $fileName);
+            // Генерируем CSV для Excel с BOM и точкой с запятой
+            $csvContent = $export->toCsvExcel();
+
+            return response($csvContent)
+                ->header('Content-Type', 'text/csv; charset=UTF-8')
+                ->header('Content-Disposition', "attachment; filename*=UTF-8''{$fileNameEncoded}")
+                ->header('Content-Length', strlen($csvContent));
 
         } catch (\Exception $e) {
             return response()->json(['message' => 'Ошибка экспорта: ' . $e->getMessage()], 500);
@@ -376,8 +495,25 @@ class TimesheetController extends Controller
         }
 
         try {
+            // Получаем данные объекта
+            $objectData = null;
+            if ($request->object_id !== 'all') {
+                $objectData = $this->getObjectData($request->object_id, $token);
+            }
+
+            // Получаем настройки работы из объекта или используем дефолтные
+            $workSettings = $objectData 
+                ? $this->getWorkSettingsFromObject($objectData)
+                : [
+                    'work_hours_per_day' => env('WORK_HOURS_PER_DAY', 8),
+                    'work_start_time' => env('WORK_START_TIME', '09:00'),
+                    'timezone' => env('WORK_TIMEZONE', 'Europe/Moscow'),
+                    'weekend_days' => explode(',', env('WEEKEND_DAYS', '6,0')),
+                    'work_days_per_week' => 5,
+                ];
+
             // Получаем данные табеля
-            $timesheetResponse = $this->getTimesheetData($request, $token);
+            $timesheetResponse = $this->getTimesheetData($request, $token, $workSettings);
             if (!$timesheetResponse['success']) {
                 return response()->json(['message' => $timesheetResponse['message']], 500);
             }
@@ -411,10 +547,11 @@ class TimesheetController extends Controller
 
             $monthName = $this->getMonthName($request->month);
             $fileName = "timesheet_{$objectName}_{$monthName}_{$request->year}.pdf";
+            $fileNameEncoded = rawurlencode($fileName);
 
             return response($dompdf->output())
                 ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+                ->header('Content-Disposition', "attachment; filename*=UTF-8''{$fileNameEncoded}");
 
         } catch (\Exception $e) {
             return response()->json(['message' => 'Ошибка экспорта: ' . $e->getMessage()], 500);
@@ -424,8 +561,18 @@ class TimesheetController extends Controller
     /**
      * Получить данные табеля (общий метод для экспорта)
      */
-    private function getTimesheetData($request, $token)
+    private function getTimesheetData($request, $token, $workSettings = null)
     {
+        // Если настройки не переданы, используем дефолтные
+        if (!$workSettings) {
+            $workSettings = [
+                'work_hours_per_day' => env('WORK_HOURS_PER_DAY', 8),
+                'work_start_time' => env('WORK_START_TIME', '09:00'),
+                'timezone' => env('WORK_TIMEZONE', 'Europe/Moscow'),
+                'weekend_days' => explode(',', env('WEEKEND_DAYS', '6,0')),
+                'work_days_per_week' => 5,
+            ];
+        }
         try {
             // Получаем всех пользователей из основного API
             $usersResponse = Http::withHeaders([
@@ -487,7 +634,7 @@ class TimesheetController extends Controller
                     $days[] = [
                         'date' => $date->format('Y-m-d'),
                         'day_of_week' => $date->dayOfWeek,
-                        'is_weekend' => $this->isWeekend($date),
+                        'is_weekend' => $this->isWeekendWithSettings($date, $workSettings['weekend_days']),
                         'is_holiday' => $this->isHoliday($date),
                         'hours_worked' => $timesheet ? $timesheet->hours_worked : 0,
                         'has_report' => $timesheet ? $timesheet->has_report : false,
@@ -512,22 +659,16 @@ class TimesheetController extends Controller
             return [
                 'success' => true,
                 'timesheet' => $result,
-                'calendar' => $calendar->map(function ($date) {
+                'calendar' => $calendar->map(function ($date) use ($workSettings) {
                     return [
                         'date' => $date->format('Y-m-d'),
                         'day' => $date->day,
                         'day_of_week' => $date->dayOfWeek,
-                        'is_weekend' => $this->isWeekend($date),
+                        'is_weekend' => $this->isWeekendWithSettings($date, $workSettings['weekend_days']),
                         'is_holiday' => $this->isHoliday($date),
                     ];
                 })->toArray(),
-                'work_settings' => [
-                    'work_hours_per_day' => env('WORK_HOURS_PER_DAY', 8),
-                    'work_start_time' => env('WORK_START_TIME', '09:00'),
-                    'timezone' => env('WORK_TIMEZONE', 'Europe/Moscow'),
-                    'weekend_days' => explode(',', env('WEEKEND_DAYS', '6,0')),
-                    'service_start_date' => env('SERVICE_START_DATE', '2025-01-01'),
-                ],
+                'work_settings' => $workSettings,
             ];
 
         } catch (\Exception $e) {
@@ -574,17 +715,62 @@ class TimesheetController extends Controller
         <head>
             <meta charset="UTF-8">
             <style>
-                body { font-family: DejaVu Sans, sans-serif; font-size: 10px; margin: 10px; }
-                .header { text-align: center; margin-bottom: 20px; }
-                .header h1 { font-size: 16px; margin: 0; }
-                .header p { margin: 5px 0; }
-                table { width: 100%; border-collapse: collapse; font-size: 8px; }
-                th, td { border: 1px solid #000; padding: 2px; text-align: center; }
-                th { background-color: #e0e0e0; font-weight: bold; }
-                .employee-name { text-align: left; font-size: 7px; }
-                .weekend { background-color: #ffe0e0; }
-                .total-row { background-color: #ffffcc; font-weight: bold; }
-                .report-mark { color: green; }
+                @page { 
+                    size: A4 landscape; 
+                    margin: 5mm; 
+                }
+                body { 
+                    font-family: DejaVu Sans, sans-serif; 
+                    font-size: 7px; 
+                    margin: 0; 
+                    padding: 5px;
+                }
+                .header { 
+                    text-align: center; 
+                    margin-bottom: 10px; 
+                }
+                .header h1 { 
+                    font-size: 12px; 
+                    margin: 0 0 5px 0; 
+                }
+                .header p { 
+                    margin: 2px 0; 
+                    font-size: 8px;
+                }
+                table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    font-size: 6px;
+                    table-layout: fixed;
+                }
+                th, td { 
+                    border: 0.5px solid #000; 
+                    padding: 1px; 
+                    text-align: center;
+                    word-wrap: break-word;
+                    overflow: hidden;
+                }
+                th { 
+                    background-color: #e0e0e0; 
+                    font-weight: bold; 
+                    font-size: 5px;
+                }
+                .employee-name { 
+                    text-align: left; 
+                    font-size: 5px;
+                    line-height: 1.1;
+                }
+                .weekend { 
+                    background-color: #ffe0e0; 
+                }
+                .total-row { 
+                    background-color: #ffffcc; 
+                    font-weight: bold; 
+                }
+                .report-mark { 
+                    color: green; 
+                    font-size: 4px;
+                }
             </style>
         </head>
         <body>
@@ -598,19 +784,19 @@ class TimesheetController extends Controller
             <table>
                 <thead>
                     <tr>
-                        <th rowspan="2" style="width: 30px;">№</th>
-                        <th rowspan="2" style="width: 120px;">ФИО</th>
-                        <th rowspan="2" style="width: 80px;">Должность</th>';
+                        <th rowspan="2" style="width: 15px;">№</th>
+                        <th rowspan="2" style="width: 80px;">ФИО</th>
+                        <th rowspan="2" style="width: 50px;">Должность</th>';
 
         // Заголовки дней
         foreach ($calendar as $day) {
             $weekendClass = ($day['is_weekend'] || $day['is_holiday']) ? ' weekend' : '';
-            $html .= '<th class="' . $weekendClass . '" style="width: 20px;">' . $day['day'] . '</th>';
+            $html .= '<th class="' . $weekendClass . '" style="width: 12px;">' . $day['day'] . '</th>';
         }
 
         $html .= '
-                        <th rowspan="2" style="width: 40px;">Итого часов</th>
-                        <th rowspan="2" style="width: 30px;">Отчетов</th>
+                        <th rowspan="2" style="width: 25px;">Итого</th>
+                        <th rowspan="2" style="width: 20px;">Отч.</th>
                     </tr>
                     <tr>';
 
@@ -628,8 +814,10 @@ class TimesheetController extends Controller
         foreach ($timesheet as $userTimesheet) {
             $html .= '<tr>';
             $html .= '<td>' . $rowNumber++ . '</td>';
-            $html .= '<td class="employee-name">' . htmlspecialchars($userTimesheet['user']['name'] . ' ' . ($userTimesheet['user']['family_name'] ?? $userTimesheet['user']['surname'] ?? '')) . '</td>';
-            $html .= '<td class="employee-name">' . htmlspecialchars($userTimesheet['user']['position'] ?? 'Не указана') . '</td>';
+            $fullName = $userTimesheet['user']['name'] . ' ' . ($userTimesheet['user']['family_name'] ?? $userTimesheet['user']['surname'] ?? '');
+            $html .= '<td class="employee-name">' . htmlspecialchars($fullName) . '</td>';
+            $position = $userTimesheet['user']['position'] ?? 'Не указана';
+            $html .= '<td class="employee-name">' . htmlspecialchars($position) . '</td>';
 
             // Часы по дням
             foreach ($userTimesheet['days'] as $day) {

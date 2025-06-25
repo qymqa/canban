@@ -19,6 +19,28 @@ class DailyReportController extends Controller
     }
 
     /**
+     * Получить данные объекта из API
+     */
+    private function getObjectData($objectId, $token)
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => $token,
+                'Accept' => 'application/json',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])->get($this->apiBaseUrl . '/objects/' . $objectId);
+
+            if ($response->successful()) {
+                return $response->json()['data'] ?? null;
+            }
+        } catch (\Exception $e) {
+            \Log::error("Error fetching object data: " . $e->getMessage());
+        }
+        
+        return null;
+    }
+
+    /**
      * Получить отчеты за месяц (календарный вид)
      */
     public function getMonthlyReports(Request $request): JsonResponse
@@ -108,6 +130,17 @@ class DailyReportController extends Controller
 
             $user = $userResponse->json()['data'] ?? $userResponse->json();
 
+            // Получаем данные объекта для получения часов работы
+            $objectData = null;
+            $workHoursPerDay = env('WORK_HOURS_PER_DAY', 8); // дефолтное значение
+            
+            if ($request->object_id !== 'all') {
+                $objectData = $this->getObjectData($request->object_id, $token);
+                if ($objectData && isset($objectData['work_hours_per_day'])) {
+                    $workHoursPerDay = $objectData['work_hours_per_day'];
+                }
+            }
+
             // Определяем дату отчета (если не передана, используем текущую)
             $reportDate = $request->report_date ? Carbon::parse($request->report_date) : now();
             
@@ -132,7 +165,7 @@ class DailyReportController extends Controller
                 
             if ($timesheet) {
                 $timesheet->update([
-                    'hours_worked' => env('WORK_HOURS_PER_DAY', 8),
+                    'hours_worked' => $workHoursPerDay,
                     'has_report' => true,
                 ]);
             } else {
@@ -142,7 +175,7 @@ class DailyReportController extends Controller
                     'date' => $reportDate->format('Y-m-d'),
                     'user_name' => $user['name'],
                     'user_surname' => $user['family_name'] ?? $user['surname'] ?? '',
-                    'hours_worked' => env('WORK_HOURS_PER_DAY', 8),
+                    'hours_worked' => $workHoursPerDay,
                     'has_report' => true,
                 ]);
             }
@@ -294,10 +327,9 @@ class DailyReportController extends Controller
         ]);
 
         $token = $request->header('Authorization');
-        // Временно отключаем проверку для отладки
-        // if (!$token) {
-        return response()->json(['message' => 'Токен не предоставлен'], 401);
-        // }
+        if (!$token) {
+            return response()->json(['message' => 'Токен не предоставлен'], 401);
+        }
 
         try {
             // Если object_id = 'all', получаем задачи из всех досок
@@ -307,7 +339,7 @@ class DailyReportController extends Controller
                     'Accept' => 'application/json',
                     'Authorization' => $token,
                     'X-Requested-With' => 'XMLHttpRequest',
-                ])->get('https://api.pto-app.ru/api/v1/objects', [
+                ])->get($this->apiBaseUrl . '/objects', [
                     'perPage' => 1000,
                     'page' => 1,
                 ]);

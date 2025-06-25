@@ -56,11 +56,12 @@
         <!-- Настройки работы -->
         <div v-if="workSettings" class="mb-6 p-4 bg-gray-50 rounded-lg">
             <h3 class="text-sm font-medium text-gray-900 mb-2">Настройки рабочего времени:</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                <div>Часов в день: {{ workSettings.work_hours_per_day }}</div>
-                <div>Начало работы: {{ workSettings.work_start_time }}</div>
-                <div>Часовой пояс: {{ workSettings.timezone }}</div>
-                <div>Выходные: {{ getWeekendDaysText(workSettings.weekend_days) }}</div>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm text-gray-600">
+                <div><strong>Часов в день:</strong> {{ workSettings.work_hours_per_day }}</div>
+                <div><strong>Начало работы:</strong> {{ workSettings.work_start_time }}</div>
+                <div><strong>Часовой пояс:</strong> {{ workSettings.timezone }}</div>
+                <div><strong>Рабочие дни:</strong> {{ getWorkDaysFromWeekends(workSettings.weekend_days) }}</div>
+                <div><strong>Выходные:</strong> {{ getWeekendDaysText(workSettings.weekend_days) }}</div>
             </div>
         </div>
 
@@ -168,7 +169,7 @@
                         
                         <!-- Итого часов -->
                         <td class="py-4 px-4 text-center font-medium sticky right-0 bg-white">
-                            <div class="text-lg">{{ userTimesheet.stats.total_hours }}</div>
+                            <div class="text-lg">{{ formatHours(userTimesheet.stats.total_hours) }}</div>
                             <div class="text-xs text-gray-500">
                                 Отчетов: {{ userTimesheet.stats.days_with_reports }}
                             </div>
@@ -194,7 +195,7 @@
                             {{ getTotalHoursForDate(day.date) }}
                         </td>
                         <td class="py-3 px-4 text-center font-bold text-lg sticky right-0 bg-gray-50">
-                            {{ totalHours }}
+                            {{ formatHours(totalHours) }}
                         </td>
                     </tr>
                 </tfoot>
@@ -356,10 +357,18 @@ export default {
 
         // Получить общее количество часов за дату
         const getTotalHoursForDate = (date) => {
-            return timesheet.value.reduce((total, userTimesheet) => {
+            const total = timesheet.value.reduce((total, userTimesheet) => {
                 const dayData = userTimesheet.days.find(day => day.date === date);
                 return total + (dayData?.hours_worked || 0);
             }, 0);
+            return formatHours(total);
+        };
+
+        // Форматировать часы (убрать ведущий ноль)
+        const formatHours = (hours) => {
+            if (hours === 0) return 0;
+            const num = parseFloat(hours);
+            return num % 1 === 0 ? num.toString() : num.toFixed(1);
         };
 
         // Получить название дня недели
@@ -372,6 +381,33 @@ export default {
         const getWeekendDaysText = (weekendDays) => {
             const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
             return weekendDays.map(day => dayNames[day]).join(', ');
+        };
+
+        // Получить текст рабочих дней из выходных
+        const getWorkDaysFromWeekends = (weekendDays) => {
+            const allDays = [0, 1, 2, 3, 4, 5, 6];
+            const workDays = allDays.filter(day => !weekendDays.includes(day));
+            const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+            return workDays.map(day => dayNames[day]).join(', ');
+        };
+
+        // Получить текст рабочих дней (старый метод, может пригодиться)
+        const getWorkDaysText = (workDaysList) => {
+            if (!workDaysList || !Array.isArray(workDaysList)) {
+                return 'Не указано';
+            }
+            
+            const dayMap = {
+                'mon': 'Пн', 'monday': 'Пн',
+                'tue': 'Вт', 'tuesday': 'Вт', 
+                'wed': 'Ср', 'wednesday': 'Ср',
+                'thu': 'Чт', 'thursday': 'Чт',
+                'fri': 'Пт', 'friday': 'Пт',
+                'sat': 'Сб', 'saturday': 'Сб',
+                'sun': 'Вс', 'sunday': 'Вс',
+            };
+            
+            return workDaysList.map(day => dayMap[day.toLowerCase()] || day).join(', ');
         };
 
         // Экспорт в Excel
@@ -395,7 +431,7 @@ export default {
                 
                 // Получаем имя файла из заголовков или создаем по умолчанию
                 const contentDisposition = response.headers['content-disposition'];
-                let filename = `timesheet_${currentMonthName.value}_${currentYear.value}.xlsx`;
+                let filename = `timesheet_${currentMonthName.value}_${currentYear.value}.csv`;
                 if (contentDisposition) {
                     const matches = /filename="([^"]*)"/.exec(contentDisposition);
                     if (matches && matches[1]) {
@@ -487,6 +523,9 @@ export default {
             getTotalHoursForDate,
             getDayName,
             getWeekendDaysText,
+            getWorkDaysFromWeekends,
+            getWorkDaysText,
+            formatHours,
             exportExcel,
             exportPdf,
         };

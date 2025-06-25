@@ -42,9 +42,9 @@
                     <div class="flex items-center justify-between py-4">
                         <div class="flex items-center space-x-8">
                             <router-link to="/board/all" class="text-gray-600 hover:text-gray-800">
-                                ← Назад к объектам
+                                ← Назад к меню
                             </router-link>
-                            <h1 class="text-xl font-semibold text-gray-900">
+                            <h1 class="text-lg font-semibold text-gray-900 truncate max-w-md" :title="currentObjectName || 'Загрузка...'">
                                 {{ currentObjectName || 'Загрузка...' }}
                             </h1>
                         </div>

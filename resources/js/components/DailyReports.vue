@@ -27,7 +27,14 @@
                 <!-- Кнопка создания отчета -->
                 <button
                     @click="openCreateModal"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                    :disabled="hasTodayReport"
+                    :class="[
+                        'px-4 py-2 rounded-lg text-sm font-medium',
+                        hasTodayReport 
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    ]"
+                    :title="hasTodayReport ? 'Отчет за сегодня уже создан' : 'Создать новый отчет'"
                 >
                     Создать отчет
                 </button>
@@ -357,7 +364,7 @@
                                     type="checkbox"
                                     :checked="isTaskSelected(task.id)"
                                     class="mr-3"
-                                    @click.stop
+                                    @click.stop="toggleTaskSelection(task)"
                                 />
                                 <div class="flex-1">
                                     <div class="font-medium text-gray-900">{{ task.title }}</div>
@@ -500,6 +507,16 @@ export default {
             return dayReports.find(report => report.user_id === userId);
         };
 
+        // Проверить, есть ли уже отчет за сегодня для текущего пользователя
+        const hasTodayReport = computed(() => {
+            if (!props.currentUser) return false;
+            
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+            const todayReports = reports.value[today] || [];
+            
+            return todayReports.some(report => report.user_id === props.currentUser.id);
+        });
+
         // Загрузить отчеты
         const loadReports = async () => {
             loading.value = true;
@@ -541,6 +558,11 @@ export default {
 
         // Модальные окна
         const openCreateModal = () => {
+            if (hasTodayReport.value) {
+                alert('Отчет за сегодня уже создан');
+                return;
+            }
+            
             newReport.value = {
                 report_text: '',
                 attached_tasks: [],
@@ -726,6 +748,7 @@ export default {
             calendarDays,
             uniqueUsers,
             getUserReportForDate,
+            hasTodayReport,
             previousMonth,
             nextMonth,
             
