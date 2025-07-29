@@ -137,7 +137,7 @@ export const useAuthStore = defineStore('auth', {
         async fetchObjects(page = 1) {
             try {
                 const response = await axios.get('/api/auth/objects', {
-                    params: { page }
+                    params: { page, perPage: 1000 }
                 });
                 this.objects = response.data.data || response.data;
                 this.objectsMeta = response.data.meta || null;

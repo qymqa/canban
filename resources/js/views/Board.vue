@@ -66,8 +66,8 @@
                   style="width: 300px;"
                 >
                   <option value="">Все объекты</option>
-                  <option v-for="object in authStore.objects" :key="object.id" :value="object.id">
-                    {{ object.title || `Объект ${object.id}` }}
+                  <option v-for="object in authStore.objects" :key="object.id" :value="object.id" :title="object.title || `Объект ${object.id}`">
+                    {{ limitText(object.title || `Объект ${object.id}`, 40) }}
                   </option>
                 </select>
               </div>
@@ -215,32 +215,33 @@
               :data-task-id="task.id"
               class="bg-white p-3 rounded-md cursor-move"
             >
-              <div class="flex justify-between items-start mb-2">
-                <h4 class="font-medium text-gray-900">{{ task.title }}</h4>
-                <div class="flex space-x-1">
-                  <span 
-                    :class="{
-                      'bg-blue-100 text-blue-800': task.status === 'waiting',
-                      'bg-orange-100 text-orange-800': task.status === 'in_progress', 
-                      'bg-green-100 text-green-800': task.status === 'completed',
-                      'bg-red-100 text-red-800': task.status === 'blocked'
-                    }"
-                    class="px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap"
-                  >
-                    {{ getStatusText(task.status) }}
-                  </span>
-                  <span 
-                    :class="{
-                      'bg-red-100 text-red-800': task.priority === 'high',
-                      'bg-yellow-100 text-yellow-800': task.priority === 'medium', 
-                      'bg-green-100 text-green-800': task.priority === 'low'
-                    }"
-                    class="px-2 py-1 text-xs font-medium rounded-full"
-                  >
-                    {{ getPriorityText(task.priority) }}
-                  </span>
-                </div>
+              <!-- Теги сверху -->
+              <div class="flex space-x-1 mb-2">
+                <span 
+                  :class="{
+                    'bg-blue-100 text-blue-800': task.status === 'waiting',
+                    'bg-orange-100 text-orange-800': task.status === 'in_progress', 
+                    'bg-green-100 text-green-800': task.status === 'completed',
+                    'bg-red-100 text-red-800': task.status === 'blocked'
+                  }"
+                  class="px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap"
+                >
+                  {{ getStatusText(task.status) }}
+                </span>
+                <span 
+                  :class="{
+                    'bg-red-100 text-red-800': task.priority === 'high',
+                    'bg-yellow-100 text-yellow-800': task.priority === 'medium', 
+                    'bg-green-100 text-green-800': task.priority === 'low'
+                  }"
+                  class="px-2 py-1 text-xs font-medium rounded-full"
+                >
+                  {{ getPriorityText(task.priority) }}
+                </span>
               </div>
+              
+              <!-- Название задачи на новой строке -->
+              <h4 class="font-medium text-gray-900 mb-2 whitespace-normal break-words">{{ task.title }}</h4>
               
               <p v-if="task.description" class="text-sm text-gray-600 mb-2">
                 {{ task.description }}
@@ -480,11 +481,13 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div v-if="!task.isEmpty" class="truncate" :title="task.title">{{ task.title }}</div>
+                  <div v-if="!task.isEmpty" class="truncate" :title="task.title">
+                    {{ limitText(task.title, 50) }}
+                  </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
                   <div v-if="!task.isEmpty" class="truncate" :title="task.description || 'Нет описания'">
-                    {{ task.description || 'Нет описания' }}
+                    {{ limitText(task.description || 'Нет описания', 80) }}
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -515,13 +518,19 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div v-if="!task.isEmpty" class="truncate">{{ getCreatorName(task.created_by_user_id) }}</div>
+                  <div v-if="!task.isEmpty" class="truncate" :title="getCreatorName(task.created_by_user_id)">
+                    {{ limitText(getCreatorName(task.created_by_user_id), 25) }}
+                  </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div v-if="!task.isEmpty" class="truncate">{{ getUserName(task.assigned_by_user_id) }}</div>
+                  <div v-if="!task.isEmpty" class="truncate" :title="getUserName(task.assigned_by_user_id)">
+                    {{ limitText(getUserName(task.assigned_by_user_id), 25) }}
+                  </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div v-if="!task.isEmpty" class="truncate">{{ getUserName(task.responsible_user_id) }}</div>
+                  <div v-if="!task.isEmpty" class="truncate" :title="getUserName(task.responsible_user_id)">
+                    {{ limitText(getUserName(task.responsible_user_id), 25) }}
+                  </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                   {{ task.isEmpty ? '' : (task.deadline ? formatDate(task.deadline) : '-') }}
@@ -546,9 +555,13 @@
                   {{ task.isEmpty ? '' : formatDate(task.created_at) }}
                 </td>
                 <td v-for="field in activeCustomFields" :key="field.id" class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                  {{ task.isEmpty ? '' : (field.type === 'date' && task.custom_fields?.[field.id] 
+                  <div v-if="!task.isEmpty" class="truncate" :title="field.type === 'date' && task.custom_fields?.[field.id] 
                       ? formatDate(task.custom_fields[field.id]) 
-                      : (task.custom_fields?.[field.id] || 'Не заполнено')) }}
+                      : (task.custom_fields?.[field.id] || 'Не заполнено')">
+                    {{ field.type === 'date' && task.custom_fields?.[field.id] 
+                        ? formatDate(task.custom_fields[field.id]) 
+                        : limitText(task.custom_fields?.[field.id] || 'Не заполнено', 30) }}
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -2135,6 +2148,13 @@ export default {
       // Не preventDefault, чтобы не блокировать Sortable
     };
 
+    // Функция для ограничения длины текста
+    const limitText = (text, maxLength) => {
+      if (!text) return '';
+      if (text.length <= maxLength) return text;
+      return text.substring(0, maxLength) + '...';
+    };
+
     onMounted(async () => {
       // Инициализируем selectedObjectId текущим объектом из route
       selectedObjectId.value = route.params.objectId === 'all' ? '' : route.params.objectId;
@@ -2241,6 +2261,7 @@ export default {
       canDeleteComment,
       deleteComment,
       handleTaskMouseDown,
+      limitText,
     };
   },
 };

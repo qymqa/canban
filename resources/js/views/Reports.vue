@@ -18,7 +18,7 @@
                         @click="selectObject(object.id)"
                         class="w-full text-left px-4 py-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-indigo-300 transition-colors"
                     >
-                        <div class="font-medium">{{ object.title || `Объект ${object.id}` }}</div>
+                        <div class="font-medium" :title="object.title || `Объект ${object.id}`">{{ limitText(object.title || `Объект ${object.id}`, 50) }}</div>
                         <div v-if="object.description" class="text-sm text-gray-500">{{ object.description }}</div>
                     </button>
                 </div>
@@ -59,8 +59,8 @@
                                     class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                                     style="width: 300px;"
                                 >
-                                    <option v-for="object in availableObjects" :key="object.id" :value="object.id">
-                                        {{ object.title || `Объект ${object.id}` }}
+                                    <option v-for="object in availableObjects" :key="object.id" :value="object.id" :title="object.title || `Объект ${object.id}`">
+                                        {{ limitText(object.title || `Объект ${object.id}`, 40) }}
                                     </option>
                                 </select>
                             </div>
@@ -96,7 +96,7 @@
             </nav>
 
             <!-- Основной контент -->
-            <main v-if="currentObjectId && currentObjectId !== 'all'" class="w-full app-max-width mx-auto px-20 pb-4">
+            <main v-if="currentObjectId && currentObjectId !== 'all'" class="w-full app-max-width mx-auto pb-4">
                 <div class="py-6">
                     <!-- Компонент ежедневных отчетов -->
                     <DailyReports
@@ -214,6 +214,13 @@ export default {
             router.push('/board/all');
         };
 
+        // Функция для ограничения длины текста
+        const limitText = (text, maxLength) => {
+            if (!text) return '';
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        };
+
         // Отслеживаем изменения в роуте
         watch(() => route.params.objectId, (newObjectId) => {
             currentObjectId.value = newObjectId;
@@ -251,6 +258,7 @@ export default {
             selectObject,
             changeObject,
             goBackToBoard,
+            limitText,
         };
     },
 };
