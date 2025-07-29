@@ -11,11 +11,9 @@ use Illuminate\Support\Facades\Log;
 
 class AttachmentController extends Controller
 {
-    private $apiBaseUrl;
-
     public function __construct()
     {
-        $this->apiBaseUrl = env('MAIN_API_URL', 'https://api.pto-app.ru/api/v1');
+        parent::__construct();
     }
 
     public function store(Request $request, Task $task): JsonResponse
@@ -89,8 +87,30 @@ class AttachmentController extends Controller
         return response()->json($attachments);
     }
 
-    public function destroy(Attachment $attachment): JsonResponse
+    public function destroy(Request $request, Attachment $attachment): JsonResponse
     {
+        $token = $request->header('Authorization');
+        if (!$token) {
+            return response()->json(['message' => 'Токен не предоставлен'], 401);
+        }
+
+        $currentUser = $this->getCurrentUser($token);
+        if (!$currentUser) {
+            return response()->json(['message' => 'Ошибка авторизации'], 401);
+        }
+
+        // Проверяем права на удаление файла
+        // Администратор может удалять любые файлы
+        if ($this->isAdmin($currentUser)) {
+            $attachment->delete();
+            return response()->json(['message' => 'Файл удален']);
+        }
+
+        // Обычный пользователь и инспектор могут удалять только свои файлы
+        if ($attachment->uploaded_by_user_id !== $currentUser['id']) {
+            return response()->json(['message' => 'Вы можете удалять только свои файлы'], 403);
+        }
+
         $attachment->delete();
         return response()->json(['message' => 'Файл удален']);
     }

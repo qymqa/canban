@@ -190,6 +190,10 @@ export default {
                 }
                 currentUser.value = authStore.user;
                 isAdmin.value = authStore.user?.role === 'admin' || authStore.user?.is_admin || false;
+        
+        // Проверяем роль пользователя для разграничения доступа
+        const userRole = authStore.user?.role || 'user';
+        const isInspector = userRole === 'inspector';
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }

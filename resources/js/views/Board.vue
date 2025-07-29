@@ -36,7 +36,7 @@
           </router-link>
           
           <a
-            href="https://app.pto-app.ru/analytics"
+                                href="https://app.staging.pto-app.ru/analytics"
             target="_parent"
             rel="noopener noreferrer"
             class="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50"
@@ -80,9 +80,9 @@
                 Поля
               </button>
               <button
-                @click="showCreateModal = true"
-                :disabled="!selectedObjectId"
-                :title="selectedObjectId ? 'Создать новую задачу' : 'Выберите объект для создания задачи'"
+                @click="canCreateTask && (showCreateModal = true)"
+                                  :disabled="!selectedObjectId || !canCreateTask"
+                  :title="!canCreateTask ? 'У вас нет прав на создание задач' : (selectedObjectId ? 'Создать новую задачу' : 'Выберите объект для создания задачи')"
                 :class="[
                   'px-4 py-2 rounded-md text-sm font-bold flex items-center space-x-2',
                   selectedObjectId 
@@ -91,7 +91,7 @@
                 ]"
               >
                 <span>Создать задачу</span>
-                <img src="https://app.dev.pto-app.ru/assets/plus.2d709d99.svg" alt="+" class="w-6 h-6" />
+                                    <img src="https://app.staging.pto-app.ru/assets/plus.2d709d99.svg" alt="+" class="w-6 h-6" />
               </button>
             </div>
           </div>
@@ -337,6 +337,7 @@
                   Подробнее
                 </button>
                 <button
+                  v-if="canDeleteTask"
                   @click.stop="deleteTask(task.id)"
                   class="text-red-600 hover:text-red-800 text-xs font-bold"
                 >
@@ -360,7 +361,7 @@
             </h3>
             <div class="flex space-x-2">
               <button
-                v-if="selectedTasks.length > 0"
+                v-if="selectedTasks.length > 0 && canDeleteTask"
                 @click="deleteSelectedTasks"
                 class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-bold"
               >
@@ -470,6 +471,7 @@
                           Открыть
                         </button>
                         <button
+                          v-if="canDeleteTask"
                           @click="deleteTask(task.id); closeTaskMenu()"
                           class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                         >
@@ -701,7 +703,7 @@
                 {{ isEditMode ? 'Редактировать задачу' : 'Просмотр задачи' }}
               </h3>
               <button
-                v-if="!isEditMode"
+                v-if="!isEditMode && canEditCurrentTask"
                 @click="enableEditMode"
                 class="px-4 py-2 text-sm font-bold bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
@@ -2106,6 +2108,33 @@ export default {
       return authStore.user && authStore.user.id === comment.user_id;
     };
 
+    // Computed properties для проверки прав доступа
+    const canCreateTask = computed(() => {
+      // Все авторизованные пользователи могут создавать задачи
+      return authStore.isAuthenticated;
+    });
+
+    const canDeleteTask = computed(() => {
+      // Только администратор может удалять задачи
+      return authStore.isAdmin;
+    });
+
+    const canEditCurrentTask = computed(() => {
+      if (!viewingTask.value || !authStore.user) return false;
+      
+      // Администратор может редактировать любые задачи
+      if (authStore.isAdmin) return true;
+      
+      // Инспектор может редактировать только свои задачи
+      if (authStore.isInspector) {
+        return viewingTask.value.created_by_user_id === authStore.user.id;
+      }
+      
+      // Обычный пользователь может редактировать только свои задачи или те, где он ответственный
+      return viewingTask.value.created_by_user_id === authStore.user.id || 
+             viewingTask.value.responsible_user_id === authStore.user.id;
+    });
+
     const deleteComment = async (comment) => {
       if (confirm('Вы уверены, что хотите удалить этот комментарий?')) {
         try {
@@ -2241,6 +2270,9 @@ export default {
       canDeleteComment,
       deleteComment,
       handleTaskMouseDown,
+      canCreateTask,
+      canDeleteTask,
+      canEditCurrentTask,
     };
   },
 };

@@ -9,11 +9,9 @@ use Illuminate\Http\JsonResponse;
 
 class BoardController extends Controller
 {
-    private $apiBaseUrl;
-
     public function __construct()
     {
-        $this->apiBaseUrl = env('MAIN_API_URL', 'https://api.pto-app.ru/api/v1');
+        parent::__construct();
     }
     public function getTaskCounts(Request $request): JsonResponse
     {
