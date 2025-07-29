@@ -71,7 +71,7 @@ class AuthController extends Controller
     public function getObjects(Request $request): JsonResponse
     {
         $token = $request->header('Authorization');
-        $perPage = $request->query('perPage', 9);
+        $perPage = $request->query('perPage', 1000);
         $page = $request->query('page', 1);
         
         if (!$token) {

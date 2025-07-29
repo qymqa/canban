@@ -126,23 +126,7 @@
                                 class="relative"
                             >
                                 <!-- Часы работы -->
-                                <input
-                                    v-if="isAdmin"
-                                    type="number"
-                                    :value="day.hours_worked"
-                                    @change="updateHours(userTimesheet.user.id, day.date, $event.target.value)"
-                                    min="0"
-                                    max="24"
-                                    step="0.5"
-                                    class="w-full text-center border-0 bg-transparent text-sm font-medium focus:ring-1 focus:ring-blue-500 rounded"
-                                    :class="{
-                                        'text-green-600': day.has_report && day.hours_worked > 0,
-                                        'text-red-600': !day.has_report && day.hours_worked === 0,
-                                        'text-gray-900': day.hours_worked > 0 && !day.has_report
-                                    }"
-                                />
                                 <span
-                                    v-else
                                     class="text-sm font-medium"
                                     :class="{
                                         'text-green-600': day.has_report && day.hours_worked > 0,
@@ -267,7 +251,8 @@ export default {
         // Подсчет общих часов
         const totalHours = computed(() => {
             return timesheet.value.reduce((total, userTimesheet) => {
-                return total + userTimesheet.stats.total_hours;
+                // Преобразуем в число для правильного сложения
+                return total + parseFloat(userTimesheet.stats.total_hours || 0);
             }, 0);
         });
 
@@ -313,28 +298,7 @@ export default {
             }
         };
 
-        // Обновить часы работы
-        const updateHours = async (userId, date, hours) => {
-            if (!props.isAdmin) {
-                alert('Только администратор может редактировать табель');
-                return;
-            }
 
-            try {
-                await axios.put('/api/timesheet/update', {
-                    object_id: props.objectId,
-                    user_id: userId,
-                    date: date,
-                    hours_worked: parseFloat(hours) || 0,
-                });
-                
-                // Обновляем локальные данные
-                await loadTimesheet();
-            } catch (error) {
-                console.error('Error updating hours:', error);
-                alert('Ошибка обновления часов');
-            }
-        };
 
         // Навигация по месяцам
         const previousMonth = () => {
@@ -359,7 +323,9 @@ export default {
         const getTotalHoursForDate = (date) => {
             const total = timesheet.value.reduce((total, userTimesheet) => {
                 const dayData = userTimesheet.days.find(day => day.date === date);
-                return total + (dayData?.hours_worked || 0);
+                const hours = dayData?.hours_worked || 0;
+                // Преобразуем в число для правильного сложения
+                return total + parseFloat(hours);
             }, 0);
             return formatHours(total);
         };
@@ -517,7 +483,6 @@ export default {
             
             // Методы
             loadTimesheet,
-            updateHours,
             previousMonth,
             nextMonth,
             getTotalHoursForDate,
