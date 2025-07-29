@@ -26,6 +26,7 @@
                 
                 <!-- Кнопка создания отчета -->
                 <button
+                    v-if="canCreateReport"
                     @click="openCreateModal"
                     :disabled="hasTodayReport"
                     :class="[
@@ -405,6 +406,7 @@
 
 <script>
 import { ref, onMounted, computed, watch } from 'vue';
+import { useAuthStore } from '../stores/auth';
 import axios from 'axios';
 
 export default {
@@ -424,6 +426,7 @@ export default {
         },
     },
     setup(props) {
+        const authStore = useAuthStore();
         const loading = ref(false);
         const reports = ref({});
         const currentYear = ref(new Date().getFullYear());
@@ -515,6 +518,12 @@ export default {
             const todayReports = reports.value[today] || [];
             
             return todayReports.some(report => report.user_id === props.currentUser.id);
+        });
+
+        // Проверка прав на создание отчетов - инспектор не может создавать отчеты
+        const canCreateReport = computed(() => {
+            const userRole = authStore.user?.role || 'user';
+            return userRole !== 'inspector';
         });
 
         // Загрузить отчеты
@@ -749,6 +758,7 @@ export default {
             uniqueUsers,
             getUserReportForDate,
             hasTodayReport,
+            canCreateReport,
             previousMonth,
             nextMonth,
             

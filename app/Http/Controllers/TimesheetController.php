@@ -15,11 +15,9 @@ use Dompdf\Options;
 
 class TimesheetController extends Controller
 {
-    private $apiBaseUrl;
-
     public function __construct()
     {
-        $this->apiBaseUrl = env('MAIN_API_URL', 'https://api.pto-app.ru/api/v1');
+        parent::__construct();
     }
 
     /**
@@ -262,6 +260,7 @@ class TimesheetController extends Controller
             $currentUser = $userResponse->json()['data'] ?? $userResponse->json();
             $isAdmin = ($currentUser['role'] ?? '') === 'admin' || ($currentUser['is_admin'] ?? false);
 
+            // Только администратор может редактировать табель
             if (!$isAdmin) {
                 return response()->json(['message' => 'Только администратор может редактировать табель'], 403);
             }

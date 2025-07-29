@@ -11,11 +11,9 @@ use Carbon\Carbon;
 
 class DailyReportController extends Controller
 {
-    private $apiBaseUrl;
-
     public function __construct()
     {
-        $this->apiBaseUrl = env('MAIN_API_URL', 'https://api.pto-app.ru/api/v1');
+        parent::__construct();
     }
 
     /**
@@ -69,6 +67,7 @@ class DailyReportController extends Controller
 
             $currentUser = $userResponse->json()['data'] ?? $userResponse->json();
             $isAdmin = ($currentUser['role'] ?? '') === 'admin' || ($currentUser['is_admin'] ?? false);
+            $isInspector = ($currentUser['role'] ?? '') === 'inspector';
 
             // Получаем отчеты
             $startDate = Carbon::create($request->year, $request->month, 1)->startOfMonth();
@@ -77,8 +76,8 @@ class DailyReportController extends Controller
             $query = DailyReport::where('object_id', $request->object_id)
                 ->whereBetween('created_at', [$startDate, $endDate]);
 
-            // Если не админ, показываем только свои отчеты
-            if (!$isAdmin) {
+            // Администратор и инспектор видят все отчеты, обычный пользователь - только свои
+            if (!$isAdmin && !$isInspector) {
                 $query->where('user_id', $currentUser['id']);
             }
 
@@ -129,6 +128,11 @@ class DailyReportController extends Controller
             }
 
             $user = $userResponse->json()['data'] ?? $userResponse->json();
+
+            // Проверяем права на создание отчетов - инспектор не может создавать отчеты
+            if (($user['role'] ?? '') === 'inspector') {
+                return response()->json(['message' => 'Инспектор не может создавать отчеты'], 403);
+            }
 
             // Получаем данные объекта для получения часов работы
             $objectData = null;
@@ -210,9 +214,10 @@ class DailyReportController extends Controller
 
             $currentUser = $userResponse->json()['data'] ?? $userResponse->json();
             $isAdmin = ($currentUser['role'] ?? '') === 'admin' || ($currentUser['is_admin'] ?? false);
+            $isInspector = ($currentUser['role'] ?? '') === 'inspector';
 
-            // Проверяем права доступа
-            if (!$isAdmin && $report->user_id !== $currentUser['id']) {
+            // Проверяем права доступа - админ и инспектор видят все отчеты, пользователь - только свои
+            if (!$isAdmin && !$isInspector && $report->user_id !== $currentUser['id']) {
                 return response()->json(['message' => 'Нет доступа к этому отчету'], 403);
             }
 
