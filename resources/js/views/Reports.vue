@@ -3,7 +3,8 @@
         <!-- Модальное окно выбора объекта -->
         <div 
             v-if="showObjectSelector" 
-            class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50"
+            class="fixed inset-0 flex items-center justify-center z-50"
+            style="background: rgba(245, 245, 245, 0.75);"
         >
             <div class="bg-white rounded-lg p-6 w-96 max-w-full">
                 <h2 class="text-xl font-semibold mb-4">Выберите объект для отчетов</h2>
@@ -189,7 +190,7 @@ export default {
                     await authStore.fetchUser();
                 }
                 currentUser.value = authStore.user;
-                isAdmin.value = authStore.user?.role === 'admin' || authStore.user?.is_admin || false;
+                isAdmin.value = authStore.user?.role === 'admin' || authStore.user?.role === 'super_admin' || authStore.user?.is_admin || false;
         
         // Проверяем роль пользователя для разграничения доступа
         const userRole = authStore.user?.role || 'user';

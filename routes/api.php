@@ -55,7 +55,7 @@ Route::delete('/daily-reports/{report}', [DailyReportController::class, 'destroy
 
 // Маршруты для табеля рабочего времени
 Route::get('/timesheet/monthly', [TimesheetController::class, 'getMonthlyTimesheet']);
-// Route::put('/timesheet/update', [TimesheetController::class, 'updateTimesheet']); // Временно отключено
+Route::put('/timesheet/update', [TimesheetController::class, 'updateTimesheet']);
 Route::get('/timesheet/stats', [TimesheetController::class, 'getTimesheetStats']);
 Route::get('/timesheet/export/csv', [TimesheetController::class, 'exportExcel']); // CSV export (method name kept for compatibility)
 Route::get('/timesheet/export/excel', [TimesheetController::class, 'exportExcel']); // Legacy Excel route - returns CSV

@@ -116,7 +116,8 @@
         <!-- Модальное окно создания отчета -->
         <div
             v-if="showCreateModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            class="fixed inset-0 flex items-center justify-center z-50"
+            style="background: rgba(245, 245, 245, 0.75);"
             @click.self="closeCreateModal"
         >
             <div class="bg-white rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
@@ -223,7 +224,8 @@
         <!-- Модальное окно редактирования отчета -->
         <div
             v-if="showEditModal && editingReport"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            class="fixed inset-0 flex items-center justify-center z-50"
+            style="background: rgba(245, 245, 245, 0.75);"
             @click.self="closeEditModal"
         >
             <div class="bg-white rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">

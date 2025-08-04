@@ -38,9 +38,9 @@ class AttachmentController extends Controller
                 'Accept-Language' => 'ru,en;q=0.9',
                 'Authorization' => $token,
                 'Cache-Control' => 'no-cache',
-                'Origin' => 'https://app.pto-app.ru',
+                'Origin' => 'https://app.staging.pto-app.ru',
                 'Pragma' => 'no-cache',
-                'Referer' => 'https://app.pto-app.ru/',
+                'Referer' => 'https://app.staging.pto-app.ru/',
                 'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
                 'X-Requested-With' => 'XMLHttpRequest',
             ])->attach('file', file_get_contents($file->getPathname()), $file->getClientOriginalName())

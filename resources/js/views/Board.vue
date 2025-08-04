@@ -241,10 +241,10 @@
               </div>
               
               <!-- Название задачи на новой строке -->
-              <h4 class="font-medium text-gray-900 mb-2 whitespace-normal break-words">{{ task.title }}</h4>
+              <h4 class="font-medium text-gray-900 mb-2 whitespace-normal break-words" :title="task.title">{{ limitText(task.title, 50) }}</h4>
               
-              <p v-if="task.description" class="text-sm text-gray-600 mb-2">
-                {{ task.description }}
+              <p v-if="task.description" class="text-sm text-gray-600 mb-2" :title="task.description">
+                {{ limitText(task.description, 100) }}
               </p>
               
               <div v-if="task.assigned_by_user_id || task.responsible_user_id" class="mb-2 text-xs text-gray-600">

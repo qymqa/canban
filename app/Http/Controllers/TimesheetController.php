@@ -258,11 +258,13 @@ class TimesheetController extends Controller
             }
 
             $currentUser = $userResponse->json()['data'] ?? $userResponse->json();
-            $isAdmin = ($currentUser['role'] ?? '') === 'admin' || ($currentUser['is_admin'] ?? false);
+            $isAdmin = ($currentUser['role'] ?? '') === 'admin' || 
+                       ($currentUser['role'] ?? '') === 'super_admin' || 
+                       ($currentUser['is_admin'] ?? false);
 
-            // Только администратор может редактировать табель
+            // Только администратор или владелец портала может редактировать табель
             if (!$isAdmin) {
-                return response()->json(['message' => 'Только администратор может редактировать табель'], 403);
+                return response()->json(['message' => 'Только администратор или владелец портала может редактировать табель'], 403);
             }
 
             // Получаем информацию о пользователе

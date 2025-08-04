@@ -15,7 +15,7 @@ abstract class Controller extends BaseController
 
     public function __construct()
     {
-        $this->apiBaseUrl = env('MAIN_API_URL', 'https://api.pto-app.ru/api/v1');
+        $this->apiBaseUrl = env('MAIN_API_URL', 'https://api.staging.pto-app.ru/api/v1');
     }
 
     /**
@@ -44,11 +44,13 @@ abstract class Controller extends BaseController
     }
 
     /**
-     * Проверить является ли пользователь администратором
+     * Проверить является ли пользователь администратором или владельцем портала
      */
     protected function isAdmin($user): bool
     {
-        return ($user['role'] ?? '') === 'admin' || ($user['is_admin'] ?? false);
+        return ($user['role'] ?? '') === 'admin' || 
+               ($user['role'] ?? '') === 'super_admin' || 
+               ($user['is_admin'] ?? false);
     }
 
     /**

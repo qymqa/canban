@@ -66,7 +66,9 @@ class DailyReportController extends Controller
             }
 
             $currentUser = $userResponse->json()['data'] ?? $userResponse->json();
-            $isAdmin = ($currentUser['role'] ?? '') === 'admin' || ($currentUser['is_admin'] ?? false);
+            $isAdmin = ($currentUser['role'] ?? '') === 'admin' || 
+                       ($currentUser['role'] ?? '') === 'super_admin' || 
+                       ($currentUser['is_admin'] ?? false);
             $isInspector = ($currentUser['role'] ?? '') === 'inspector';
 
             // Получаем отчеты
@@ -213,7 +215,9 @@ class DailyReportController extends Controller
             }
 
             $currentUser = $userResponse->json()['data'] ?? $userResponse->json();
-            $isAdmin = ($currentUser['role'] ?? '') === 'admin' || ($currentUser['is_admin'] ?? false);
+            $isAdmin = ($currentUser['role'] ?? '') === 'admin' || 
+                       ($currentUser['role'] ?? '') === 'super_admin' || 
+                       ($currentUser['is_admin'] ?? false);
             $isInspector = ($currentUser['role'] ?? '') === 'inspector';
 
             // Проверяем права доступа - админ и инспектор видят все отчеты, пользователь - только свои
@@ -255,10 +259,13 @@ class DailyReportController extends Controller
             }
 
             $currentUser = $userResponse->json()['data'] ?? $userResponse->json();
+            $isAdmin = ($currentUser['role'] ?? '') === 'admin' || 
+                       ($currentUser['role'] ?? '') === 'super_admin' || 
+                       ($currentUser['is_admin'] ?? false);
 
-            // Проверяем права доступа - только автор может редактировать
-            if ($report->user_id !== $currentUser['id']) {
-                return response()->json(['message' => 'Можно редактировать только свои отчеты'], 403);
+            // Проверяем права доступа - автор или администратор может редактировать
+            if ($report->user_id !== $currentUser['id'] && !$isAdmin) {
+                return response()->json(['message' => 'Можно редактировать только свои отчеты или быть администратором'], 403);
             }
 
             // Обновляем отчет
@@ -296,10 +303,13 @@ class DailyReportController extends Controller
             }
 
             $currentUser = $userResponse->json()['data'] ?? $userResponse->json();
+            $isAdmin = ($currentUser['role'] ?? '') === 'admin' || 
+                       ($currentUser['role'] ?? '') === 'super_admin' || 
+                       ($currentUser['is_admin'] ?? false);
 
-            // Проверяем права доступа - только автор может удалять
-            if ($report->user_id !== $currentUser['id']) {
-                return response()->json(['message' => 'Можно удалять только свои отчеты'], 403);
+            // Проверяем права доступа - автор или администратор может удалять
+            if ($report->user_id !== $currentUser['id'] && !$isAdmin) {
+                return response()->json(['message' => 'Можно удалять только свои отчеты или быть администратором'], 403);
             }
 
             // Удаляем отчет

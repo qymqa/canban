@@ -125,8 +125,27 @@
                                 v-if="!day.is_weekend && !day.is_holiday"
                                 class="relative"
                             >
-                                <!-- Часы работы -->
+                                <!-- Редактируемые часы для администратора -->
+                                <input
+                                    v-if="isAdmin"
+                                    type="number"
+                                    min="0"
+                                    max="24"
+                                    step="0.5"
+                                    :value="day.hours_worked || 0"
+                                    @input="updateHours(userTimesheet.user.id, day.date, $event.target.value)"
+                                    @blur="saveHours(userTimesheet.user.id, day.date, $event.target.value)"
+                                    class="w-12 h-8 text-center text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    :class="{
+                                        'text-green-600 border-green-300': day.has_report && day.hours_worked > 0,
+                                        'text-red-600 border-red-300': !day.has_report && day.hours_worked === 0,
+                                        'text-gray-900': day.hours_worked > 0 && !day.has_report
+                                    }"
+                                />
+                                
+                                <!-- Обычное отображение для не-администраторов -->
                                 <span
+                                    v-else
                                     class="text-sm font-medium"
                                     :class="{
                                         'text-green-600': day.has_report && day.hours_worked > 0,
@@ -456,6 +475,39 @@ export default {
             }
         };
 
+        // Обновление часов (для администраторов)
+        const updateHours = (userId, date, hours) => {
+            // Обновляем локально для мгновенного отклика
+            const userTimesheet = timesheet.value.find(u => u.user.id === userId);
+            if (userTimesheet) {
+                const day = userTimesheet.days.find(d => d.date === date);
+                if (day) {
+                    day.hours_worked = parseFloat(hours) || 0;
+                }
+            }
+        };
+
+        // Сохранение часов на сервере
+        const saveHours = async (userId, date, hours) => {
+            if (!props.isAdmin) return;
+            
+            try {
+                await axios.put('/api/timesheet/update', {
+                    object_id: props.objectId,
+                    user_id: userId,
+                    date: date,
+                    hours_worked: parseFloat(hours) || 0,
+                });
+                
+                // Перезагружаем данные для обновления статистики
+                await loadTimesheet();
+            } catch (error) {
+                console.error('Error updating timesheet:', error);
+                // Перезагружаем данные в случае ошибки
+                await loadTimesheet();
+            }
+        };
+
         // Следим за изменением месяца/года
         watch([currentYear, currentMonth], () => {
             loadTimesheet();
@@ -493,6 +545,8 @@ export default {
             formatHours,
             exportExcel,
             exportPdf,
+            updateHours,
+            saveHours,
         };
     },
 };
