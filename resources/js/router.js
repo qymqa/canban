@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Login from './views/Login.vue';
 import Board from './views/Board.vue';
 import TokenAuth from './views/TokenAuth.vue';
+import Reports from './views/Reports.vue';
 import { useAuthStore } from './stores/auth';
 
 const routes = [
@@ -29,10 +30,16 @@ const routes = [
         component: Board,
         meta: { requiresAuth: true },
     },
+    {
+        path: '/reports/:objectId',
+        name: 'Reports',
+        component: Reports,
+        meta: { requiresAuth: true },
+    },
 ];
 
 const router = createRouter({
-    history: createWebHistory(),
+    history: createWebHistory('/canban/'),
     routes,
 });
 

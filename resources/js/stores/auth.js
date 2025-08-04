@@ -13,6 +13,10 @@ export const useAuthStore = defineStore('auth', {
 
     getters: {
         isAuthenticated: (state) => !!state.token,
+        isAdmin: (state) => state.user?.role === 'admin' || state.user?.role === 'super_admin' || state.user?.is_admin || false,
+        isInspector: (state) => state.user?.role === 'inspector',
+        isUser: (state) => state.user?.role === 'user' || (!state.user?.role || !['admin', 'super_admin', 'inspector'].includes(state.user?.role)),
+        userRole: (state) => state.user?.role || 'user',
     },
 
     actions: {
@@ -137,7 +141,7 @@ export const useAuthStore = defineStore('auth', {
         async fetchObjects(page = 1) {
             try {
                 const response = await axios.get('/api/auth/objects', {
-                    params: { page }
+                    params: { page, perPage: 1000 }
                 });
                 this.objects = response.data.data || response.data;
                 this.objectsMeta = response.data.meta || null;

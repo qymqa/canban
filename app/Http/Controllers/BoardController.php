@@ -9,6 +9,10 @@ use Illuminate\Http\JsonResponse;
 
 class BoardController extends Controller
 {
+    public function __construct()
+    {
+        parent::__construct();
+    }
     public function getTaskCounts(Request $request): JsonResponse
     {
         $objectIds = $request->input('object_ids', []);
@@ -83,7 +87,7 @@ class BoardController extends Controller
                 'Accept' => 'application/json',
                 'Authorization' => $token,
                 'X-Requested-With' => 'XMLHttpRequest',
-            ])->get('https://api.pto-app.ru/api/v1/objects', [
+            ])->get($this->apiBaseUrl . '/objects', [
                 'perPage' => 1000, // Получаем все доступные объекты
                 'page' => 1,
             ]);

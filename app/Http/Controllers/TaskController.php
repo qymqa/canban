@@ -24,6 +24,21 @@ class TaskController extends Controller
             'custom_fields' => 'nullable|array',
         ]);
 
+        $token = $request->header('Authorization');
+        if (!$token) {
+            return response()->json(['message' => 'Токен не предоставлен'], 401);
+        }
+
+        $currentUser = $this->getCurrentUser($token);
+        if (!$currentUser) {
+            return response()->json(['message' => 'Ошибка авторизации'], 401);
+        }
+
+        // Проверяем права на создание задач
+        if (!$this->canCreateTask($currentUser)) {
+            return response()->json(['message' => 'У вас нет прав на создание задач'], 403);
+        }
+
         // Валидируем дополнительные поля
         $this->validateCustomFields($request->custom_fields ?? []);
 
@@ -57,6 +72,21 @@ class TaskController extends Controller
             'position' => 'required|integer|min:0',
         ]);
 
+        $token = $request->header('Authorization');
+        if (!$token) {
+            return response()->json(['message' => 'Токен не предоставлен'], 401);
+        }
+
+        $currentUser = $this->getCurrentUser($token);
+        if (!$currentUser) {
+            return response()->json(['message' => 'Ошибка авторизации'], 401);
+        }
+
+        // Проверяем права на редактирование задачи
+        if (!$this->canEditTask($currentUser, $task)) {
+            return response()->json(['message' => 'У вас нет прав на редактирование этой задачи'], 403);
+        }
+
         Task::where('board_id', $task->board_id)
             ->where('status', $request->status)
             ->where('position', '>=', $request->position)
@@ -83,6 +113,21 @@ class TaskController extends Controller
             'custom_fields' => 'nullable|array',
         ]);
 
+        $token = $request->header('Authorization');
+        if (!$token) {
+            return response()->json(['message' => 'Токен не предоставлен'], 401);
+        }
+
+        $currentUser = $this->getCurrentUser($token);
+        if (!$currentUser) {
+            return response()->json(['message' => 'Ошибка авторизации'], 401);
+        }
+
+        // Проверяем права на редактирование задачи
+        if (!$this->canEditTask($currentUser, $task)) {
+            return response()->json(['message' => 'У вас нет прав на редактирование этой задачи'], 403);
+        }
+
         // Валидируем дополнительные поля
         $this->validateCustomFields($request->custom_fields ?? []);
 
@@ -94,8 +139,23 @@ class TaskController extends Controller
         return response()->json($task);
     }
 
-    public function destroy(Task $task): JsonResponse
+    public function destroy(Request $request, Task $task): JsonResponse
     {
+        $token = $request->header('Authorization');
+        if (!$token) {
+            return response()->json(['message' => 'Токен не предоставлен'], 401);
+        }
+
+        $currentUser = $this->getCurrentUser($token);
+        if (!$currentUser) {
+            return response()->json(['message' => 'Ошибка авторизации'], 401);
+        }
+
+        // Проверяем права на удаление задачи
+        if (!$this->canDeleteTask($currentUser, $task)) {
+            return response()->json(['message' => 'У вас нет прав на удаление этой задачи'], 403);
+        }
+
         $task->delete();
         return response()->json(['message' => 'Задача удалена']);
     }

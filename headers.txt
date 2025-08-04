@@ -1,0 +1,10 @@
+HTTP/1.1 200 OK
+Server: nginx/1.18.0 (Ubuntu)
+Content-Type: text/csv; charset=UTF-8
+Content-Length: 700
+Connection: keep-alive
+Cache-Control: no-cache, private
+Date: Thu, 19 Jun 2025 15:42:11 GMT
+Content-Disposition: attachment; filename="timesheet_Торговый центр "Горизонт"_Июнь_2025.csv"
+Access-Control-Allow-Origin: *
+

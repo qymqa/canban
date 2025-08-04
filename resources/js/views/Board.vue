@@ -15,28 +15,28 @@
             Задачи
           </router-link>
           
-          <button
-            disabled
-            class="flex items-center w-full px-4 py-2 text-sm font-medium rounded-md text-gray-400 cursor-not-allowed"
+          <router-link
+            :to="route.params.objectId === 'all' ? '/reports/all' : `/reports/${route.params.objectId}`"
+            class="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50"
           >
             <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
             Ежедневный отчет
-          </button>
+          </router-link>
           
-          <button
-            disabled
-            class="flex items-center w-full px-4 py-2 text-sm font-medium rounded-md text-gray-400 cursor-not-allowed"
+          <router-link
+            :to="route.params.objectId === 'all' ? '/reports/all?tab=timesheet' : `/reports/${route.params.objectId}?tab=timesheet`"
+            class="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50"
           >
             <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             Табель
-          </button>
+          </router-link>
           
           <a
-            href="https://app.pto-app.ru/analytics"
+                                href="https://app.staging.pto-app.ru/analytics"
             target="_parent"
             rel="noopener noreferrer"
             class="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50"
@@ -66,8 +66,8 @@
                   style="width: 300px;"
                 >
                   <option value="">Все объекты</option>
-                  <option v-for="object in authStore.objects" :key="object.id" :value="object.id">
-                    {{ object.title || `Объект ${object.id}` }}
+                  <option v-for="object in authStore.objects" :key="object.id" :value="object.id" :title="object.title || `Объект ${object.id}`">
+                    {{ limitText(object.title || `Объект ${object.id}`, 40) }}
                   </option>
                 </select>
               </div>
@@ -80,9 +80,9 @@
                 Поля
               </button>
               <button
-                @click="showCreateModal = true"
-                :disabled="!selectedObjectId"
-                :title="selectedObjectId ? 'Создать новую задачу' : 'Выберите объект для создания задачи'"
+                @click="canCreateTask && (showCreateModal = true)"
+                                  :disabled="!selectedObjectId || !canCreateTask"
+                  :title="!canCreateTask ? 'У вас нет прав на создание задач' : (selectedObjectId ? 'Создать новую задачу' : 'Выберите объект для создания задачи')"
                 :class="[
                   'px-4 py-2 rounded-md text-sm font-bold flex items-center space-x-2',
                   selectedObjectId 
@@ -91,7 +91,7 @@
                 ]"
               >
                 <span>Создать задачу</span>
-                <img src="https://app.dev.pto-app.ru/assets/plus.2d709d99.svg" alt="+" class="w-6 h-6" />
+                                    <img src="https://app.staging.pto-app.ru/assets/plus.2d709d99.svg" alt="+" class="w-6 h-6" />
               </button>
             </div>
           </div>
@@ -215,35 +215,36 @@
               :data-task-id="task.id"
               class="bg-white p-3 rounded-md cursor-move"
             >
-              <div class="flex justify-between items-start mb-2">
-                <h4 class="font-medium text-gray-900">{{ task.title }}</h4>
-                <div class="flex space-x-1">
-                  <span 
-                    :class="{
-                      'bg-blue-100 text-blue-800': task.status === 'waiting',
-                      'bg-orange-100 text-orange-800': task.status === 'in_progress', 
-                      'bg-green-100 text-green-800': task.status === 'completed',
-                      'bg-red-100 text-red-800': task.status === 'blocked'
-                    }"
-                    class="px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap"
-                  >
-                    {{ getStatusText(task.status) }}
-                  </span>
-                  <span 
-                    :class="{
-                      'bg-red-100 text-red-800': task.priority === 'high',
-                      'bg-yellow-100 text-yellow-800': task.priority === 'medium', 
-                      'bg-green-100 text-green-800': task.priority === 'low'
-                    }"
-                    class="px-2 py-1 text-xs font-medium rounded-full"
-                  >
-                    {{ getPriorityText(task.priority) }}
-                  </span>
-                </div>
+              <!-- Теги сверху -->
+              <div class="flex space-x-1 mb-2">
+                <span 
+                  :class="{
+                    'bg-blue-100 text-blue-800': task.status === 'waiting',
+                    'bg-orange-100 text-orange-800': task.status === 'in_progress', 
+                    'bg-green-100 text-green-800': task.status === 'completed',
+                    'bg-red-100 text-red-800': task.status === 'blocked'
+                  }"
+                  class="px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap"
+                >
+                  {{ getStatusText(task.status) }}
+                </span>
+                <span 
+                  :class="{
+                    'bg-red-100 text-red-800': task.priority === 'high',
+                    'bg-yellow-100 text-yellow-800': task.priority === 'medium', 
+                    'bg-green-100 text-green-800': task.priority === 'low'
+                  }"
+                  class="px-2 py-1 text-xs font-medium rounded-full"
+                >
+                  {{ getPriorityText(task.priority) }}
+                </span>
               </div>
               
-              <p v-if="task.description" class="text-sm text-gray-600 mb-2">
-                {{ task.description }}
+              <!-- Название задачи на новой строке -->
+              <h4 class="font-medium text-gray-900 mb-2 whitespace-normal break-words" :title="task.title">{{ limitText(task.title, 50) }}</h4>
+              
+              <p v-if="task.description" class="text-sm text-gray-600 mb-2" :title="task.description">
+                {{ limitText(task.description, 100) }}
               </p>
               
               <div v-if="task.assigned_by_user_id || task.responsible_user_id" class="mb-2 text-xs text-gray-600">
@@ -337,6 +338,7 @@
                   Подробнее
                 </button>
                 <button
+                  v-if="canDeleteTask"
                   @click.stop="deleteTask(task.id)"
                   class="text-red-600 hover:text-red-800 text-xs font-bold"
                 >
@@ -360,7 +362,7 @@
             </h3>
             <div class="flex space-x-2">
               <button
-                v-if="selectedTasks.length > 0"
+                v-if="selectedTasks.length > 0 && canDeleteTask"
                 @click="deleteSelectedTasks"
                 class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-bold"
               >
@@ -470,6 +472,7 @@
                           Открыть
                         </button>
                         <button
+                          v-if="canDeleteTask"
                           @click="deleteTask(task.id); closeTaskMenu()"
                           class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                         >
@@ -480,11 +483,13 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div v-if="!task.isEmpty" class="truncate" :title="task.title">{{ task.title }}</div>
+                  <div v-if="!task.isEmpty" class="truncate" :title="task.title">
+                    {{ limitText(task.title, 50) }}
+                  </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
                   <div v-if="!task.isEmpty" class="truncate" :title="task.description || 'Нет описания'">
-                    {{ task.description || 'Нет описания' }}
+                    {{ limitText(task.description || 'Нет описания', 80) }}
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -515,13 +520,19 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div v-if="!task.isEmpty" class="truncate">{{ getCreatorName(task.created_by_user_id) }}</div>
+                  <div v-if="!task.isEmpty" class="truncate" :title="getCreatorName(task.created_by_user_id)">
+                    {{ limitText(getCreatorName(task.created_by_user_id), 25) }}
+                  </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div v-if="!task.isEmpty" class="truncate">{{ getUserName(task.assigned_by_user_id) }}</div>
+                  <div v-if="!task.isEmpty" class="truncate" :title="getUserName(task.assigned_by_user_id)">
+                    {{ limitText(getUserName(task.assigned_by_user_id), 25) }}
+                  </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-black max-w-xs">
-                  <div v-if="!task.isEmpty" class="truncate">{{ getUserName(task.responsible_user_id) }}</div>
+                  <div v-if="!task.isEmpty" class="truncate" :title="getUserName(task.responsible_user_id)">
+                    {{ limitText(getUserName(task.responsible_user_id), 25) }}
+                  </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                   {{ task.isEmpty ? '' : (task.deadline ? formatDate(task.deadline) : '-') }}
@@ -546,9 +557,13 @@
                   {{ task.isEmpty ? '' : formatDate(task.created_at) }}
                 </td>
                 <td v-for="field in activeCustomFields" :key="field.id" class="px-6 py-4 whitespace-nowrap text-sm text-black">
-                  {{ task.isEmpty ? '' : (field.type === 'date' && task.custom_fields?.[field.id] 
+                  <div v-if="!task.isEmpty" class="truncate" :title="field.type === 'date' && task.custom_fields?.[field.id] 
                       ? formatDate(task.custom_fields[field.id]) 
-                      : (task.custom_fields?.[field.id] || 'Не заполнено')) }}
+                      : (task.custom_fields?.[field.id] || 'Не заполнено')">
+                    {{ field.type === 'date' && task.custom_fields?.[field.id] 
+                        ? formatDate(task.custom_fields[field.id]) 
+                        : limitText(task.custom_fields?.[field.id] || 'Не заполнено', 30) }}
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -701,7 +716,7 @@
                 {{ isEditMode ? 'Редактировать задачу' : 'Просмотр задачи' }}
               </h3>
               <button
-                v-if="!isEditMode"
+                v-if="!isEditMode && canEditCurrentTask"
                 @click="enableEditMode"
                 class="px-4 py-2 text-sm font-bold bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
@@ -2106,6 +2121,33 @@ export default {
       return authStore.user && authStore.user.id === comment.user_id;
     };
 
+    // Computed properties для проверки прав доступа
+    const canCreateTask = computed(() => {
+      // Все авторизованные пользователи могут создавать задачи
+      return authStore.isAuthenticated;
+    });
+
+    const canDeleteTask = computed(() => {
+      // Только администратор может удалять задачи
+      return authStore.isAdmin;
+    });
+
+    const canEditCurrentTask = computed(() => {
+      if (!viewingTask.value || !authStore.user) return false;
+      
+      // Администратор может редактировать любые задачи
+      if (authStore.isAdmin) return true;
+      
+      // Инспектор может редактировать только свои задачи
+      if (authStore.isInspector) {
+        return viewingTask.value.created_by_user_id === authStore.user.id;
+      }
+      
+      // Обычный пользователь может редактировать только свои задачи или те, где он ответственный
+      return viewingTask.value.created_by_user_id === authStore.user.id || 
+             viewingTask.value.responsible_user_id === authStore.user.id;
+    });
+
     const deleteComment = async (comment) => {
       if (confirm('Вы уверены, что хотите удалить этот комментарий?')) {
         try {
@@ -2133,6 +2175,13 @@ export default {
 
     const handleTaskMouseDown = (taskId, event) => {
       // Не preventDefault, чтобы не блокировать Sortable
+    };
+
+    // Функция для ограничения длины текста
+    const limitText = (text, maxLength) => {
+      if (!text) return '';
+      if (text.length <= maxLength) return text;
+      return text.substring(0, maxLength) + '...';
     };
 
     onMounted(async () => {
@@ -2241,6 +2290,10 @@ export default {
       canDeleteComment,
       deleteComment,
       handleTaskMouseDown,
+      limitText,
+      canCreateTask,
+      canDeleteTask,
+      canEditCurrentTask
     };
   },
 };

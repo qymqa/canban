@@ -13,3 +13,7 @@
 .app-max-width {
     max-width: 2400px;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
